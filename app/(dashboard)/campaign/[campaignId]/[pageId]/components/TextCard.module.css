@@ -1,0 +1,70 @@
+.textCard {
+  border-radius: 10px;
+  background-color: #DCA15D;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn {
+  background-color: #FEFADF;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  align-self: flex-start;
+  color: #283718;
+  font-size: 15px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 10px;
+  background-color: #FEFADF;
+}
+
+.textCard p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  margin: 0 0 16px 0;
+  white-space: pre-wrap;
+  color: #283718;
+  font-size: 16px;
+}
+
+.cancelBtn {
+  background: #BE6B25;
+  color: #FEFADF;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.saveBtn {
+  background: #616B39;
+  color: #FEFADF;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  background: #EC2C2C;
+  color: #FEFADF;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
