@@ -2,8 +2,9 @@
 
 import { useEffect, useState, use } from "react";
 import { supabase } from "@/lib/supabase";
-import styles from "./page.module.css"; // Import the new styles
-import TextCard from "./components/TextCard";
+import styles from "./page.module.css";
+import TextCard from "./components/UI/TextCard";
+import CharacterCard from "./components/UI/CharacterCard";
 
 export default function DetailPage({ params: paramsPromise }: { params: Promise<{ pageId: string }> }) {
   const { pageId } = use(paramsPromise);
@@ -38,27 +39,39 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
     fetchPageName();
   }, [pageId]);
 
-  const createCard = async (type: 'text') => {
+  const createCard = async (type: 'text' | 'character') => {
+  const initialData = type === 'character' 
+    ? { 
+        name: "", 
+        class: "", 
+        race: "", 
+        hp: "", 
+        ac: "", 
+        imageUrl: "", 
+        str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10 
+      }
+    : { text: "New card..." };
+
     const { data, error } = await supabase
-      .from('page_cards')
-      .insert([{ page_id: pageId, type: type, data: { text: "New card..." } }])
-      .select()
-      .single();
+    .from('page_cards')
+    .insert([{ page_id: pageId, type: type, data: initialData }])
+    .select()
+    .single();
 
     if (data) {
-      setCards([...cards, data]); // Appends the new card to your existing list
-    }
-  };
+    setCards([...cards, data]);
+  } else if (error) {
+    console.error("Error creating card:", error);
+  }
+};
 
   const handleDelete = async (id: string) => {
-    // Call Supabase to delete the row from the database
     const { error } = await supabase
       .from('page_cards')
       .delete()
       .eq('id', id);
 
     if (!error) {
-      // If successful in DB, update local state to remove the card from the UI
       setCards(cards.filter((card) => card.id !== id));
     } else {
       console.error("Delete failed:", error);
@@ -72,14 +85,22 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
       </header>
 
       <div className={styles.content}>
-        {/* 3. MAP AND RENDER CARDS */}
         {cards.map((card) => (
-          <TextCard
-            key={card.id}
-            id={card.id}
-            initialData={card.data}
-            onDelete={handleDelete}
-          />
+          card.type === 'character' ? (
+            <CharacterCard
+              key={card.id}
+              id={card.id}
+              initialData={card.data}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <TextCard
+              key={card.id}
+              id={card.id}
+              initialData={card.data}
+              onDelete={handleDelete}
+            />
+          )
         ))}
         <div className={styles.controls}>
           <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
@@ -101,6 +122,14 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
               }}
             >
               Text Card
+            </button>
+
+            <button onClick={() => {
+              createCard('character');
+              setIsModalOpen(false);
+            }}
+            >
+              Create Character Card
             </button>
 
             <button
