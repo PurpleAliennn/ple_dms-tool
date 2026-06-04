@@ -1,16 +1,33 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, SetStateAction } from "react";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 import TextCard from "./components/UI/TextCard";
 import CharacterCard from "./components/UI/CharacterCard";
+import { SortableContainer } from "./components/dnd/SortableContainer";
 
 export default function DetailPage({ params: paramsPromise }: { params: Promise<{ pageId: string }> }) {
   const { pageId } = use(paramsPromise);
   const [pageLabel, setPageLabel] = useState("Loading...");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cards, setCards] = useState<any[]>([]);
+
+  const syncOrderToDatabase = async (newCards: any[]) => {
+    const updates = newCards.map((card, index) => ({
+      id: card.id,
+      order_index: index, // Updates the column you created
+    }));
+    await supabase.from('page_cards').upsert(updates);
+  };
+
+const handleCardsChange = (action: SetStateAction<any[]>) => {
+    // Calculate new state based on whether action is a value or a function
+    const newCards = typeof action === 'function' ? action(cards) : action;
+    
+    setCards(newCards);
+    syncOrderToDatabase(newCards);
+  };
 
   useEffect(() => {
     const fetchPageName = async () => {
@@ -40,30 +57,30 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
   }, [pageId]);
 
   const createCard = async (type: 'text' | 'character') => {
-  const initialData = type === 'character' 
-    ? { 
-        name: "", 
-        class: "", 
-        race: "", 
-        hp: "", 
-        ac: "", 
-        imageUrl: "", 
-        str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10 
+    const initialData = type === 'character'
+      ? {
+        name: "",
+        class: "",
+        race: "",
+        hp: "",
+        ac: "",
+        imageUrl: "",
+        str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10
       }
-    : { text: "New card..." };
+      : { text: "New card..." };
 
     const { data, error } = await supabase
-    .from('page_cards')
-    .insert([{ page_id: pageId, type: type, data: initialData }])
-    .select()
-    .single();
+      .from('page_cards')
+      .insert([{ page_id: pageId, type: type, data: initialData }])
+      .select()
+      .single();
 
     if (data) {
-    setCards([...cards, data]);
-  } else if (error) {
-    console.error("Error creating card:", error);
-  }
-};
+      setCards([...cards, data]);
+    } else if (error) {
+      console.error("Error creating card:", error);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase
@@ -85,23 +102,29 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
       </header>
 
       <div className={styles.content}>
-        {cards.map((card) => (
-          card.type === 'character' ? (
-            <CharacterCard
-              key={card.id}
-              id={card.id}
-              initialData={card.data}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <TextCard
-              key={card.id}
-              id={card.id}
-              initialData={card.data}
-              onDelete={handleDelete}
-            />
-          )
-        ))}
+        {/* The SortableContainer replaces your manual map */}
+        <SortableContainer
+          items={cards}
+          setItems={handleCardsChange}
+          renderItem={(card) => (
+            card.type === 'character' ? (
+              <CharacterCard
+                key={card.id}
+                id={card.id}
+                initialData={card.data}
+                onDelete={handleDelete}
+              />
+            ) : (
+              <TextCard
+                key={card.id}
+                id={card.id}
+                initialData={card.data}
+                onDelete={handleDelete}
+              />
+            )
+          )}
+        />
+
         <div className={styles.controls}>
           <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
             + Add New Card
@@ -115,7 +138,7 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
             <h3>Add a New Card</h3>
 
             <button
-              className={styles.modalButtonTextCard}
+              className={styles.modalButtonCard}
               onClick={() => {
                 createCard('text');
                 setIsModalOpen(false);
@@ -124,12 +147,14 @@ export default function DetailPage({ params: paramsPromise }: { params: Promise<
               Text Card
             </button>
 
-            <button onClick={() => {
+            <button 
+            className={styles.modalButtonCard}
+            onClick={() => {
               createCard('character');
               setIsModalOpen(false);
             }}
             >
-              Create Character Card
+              Character Card
             </button>
 
             <button
