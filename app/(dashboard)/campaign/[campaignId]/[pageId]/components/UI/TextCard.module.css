@@ -21,13 +21,14 @@
   align-self: flex-start;
   color: #283718;
   font-size: 15px;
+  margin-top: 10px;
 }
 
 .textarea {
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   border: none;
   border-radius: 10px;
   background-color: #FEFADF;
@@ -67,4 +68,31 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.cardTitle {
+  margin: 10px 0 2px 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #283718;
+}
+
+.cardSubtitle {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #283718;
+  font-style: italic;
+}
+
+.titleInput,
+.subtitleInput {
+  padding: 10px;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background-color: #FEFADF;
 }

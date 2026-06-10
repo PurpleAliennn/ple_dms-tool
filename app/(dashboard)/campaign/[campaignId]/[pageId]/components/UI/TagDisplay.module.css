@@ -1,0 +1,41 @@
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; 
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  color:#283718;
+}
+
+.tag {
+  background-color: #A4CCD9; 
+  color: #283718;     
+  padding: 4px 12px;
+  border-radius: 10px;  
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.addTagButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #283718;
+  padding: 0 4px;
+  transition: opacity 0.2s;
+}
+
+.addTagButton:hover {
+  opacity: 0.6;
+}
+
+.removeBtn {
+    background: none;
+    border: none;
+}
