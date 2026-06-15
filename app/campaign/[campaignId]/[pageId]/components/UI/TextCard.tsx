@@ -3,25 +3,37 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import styles from "./TextCard.module.css";
 import { useCharacterTags } from "@/hooks/useCharacterTags";
-import TagDisplay from "./TagDisplay"; 
+import TagDisplay from "./TagDisplay";
 import TagModal from "./TagModal";
 import { getAllTags } from "@/lib/tagService";
 
-export default function TextCard({ id, initialData, onDelete }: {
+interface Tag {
+    id: string;
+    name: string;
+    campaign_id?: string;
+}
+
+export default function TextCard({
+    id,
+    initialData,
+    onDelete,
+    campaignId // Added campaignId prop
+}: {
     id: string,
     initialData: { text: string, title?: string, subtitle?: string },
-    onDelete: (id: string) => void
+    onDelete: (id: string) => void,
+    campaignId: string // Added campaignId prop
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(initialData.title || "");
     const [subtitle, setSubtitle] = useState(initialData.subtitle || "");
     const [text, setText] = useState(initialData.text || "");
-    
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [allAvailableTags, setAllAvailableTags] = useState<any[]>([]);
+    const [allAvailableTags, setAllAvailableTags] = useState<Tag[]>([]);
 
-    const { tags, handleAdd, isLoading, handleRemove } = useCharacterTags(id, []);
+    const { tags, handleAdd, handleRemove } = useCharacterTags(id);
 
     const resizeTextarea = () => {
         if (textareaRef.current) {
@@ -31,20 +43,22 @@ export default function TextCard({ id, initialData, onDelete }: {
     };
 
     useEffect(() => {
-        if (isModalOpen) getAllTags().then(setAllAvailableTags);
-    }, [isModalOpen]);
+        if (isModalOpen) {
+            // Fetch tags using the campaignId
+            getAllTags(campaignId).then((tags) => setAllAvailableTags(tags as Tag[]));
+        }
+    }, [isModalOpen, campaignId]);
 
     useEffect(() => {
         if (isEditing) resizeTextarea();
     }, [isEditing]);
 
-const handleSave = async () => {
-
+    const handleSave = async () => {
         await supabase
             .from('page_cards')
-            .update({ 
-                title: title, 
-                data: { text, title, subtitle } 
+            .update({
+                title: title,
+                data: { text, title, subtitle }
             })
             .eq('id', id);
         setIsEditing(false);
@@ -52,13 +66,12 @@ const handleSave = async () => {
 
     return (
         <div id={`card-${id}`} className={styles.textCard}>
-
             <div className={styles.tagSection}>
-                <TagDisplay 
-                    tags={tags.map(t => ({ 
-                        id: t.tag_id, 
-                        label: t.tags?.name || t.tags?.label || "Unknown" 
-                    }))} 
+                <TagDisplay
+                    tags={tags.map(t => ({
+                        id: t.tag_id,
+                        label: t.tags?.name || t.tags?.label || "Unknown"
+                    }))}
                     onAdd={() => setIsModalOpen(true)}
                     onRemove={(tagId) => handleRemove(tagId)}
                 />
@@ -66,17 +79,17 @@ const handleSave = async () => {
 
             {isEditing ? (
                 <div className={styles.editForm}>
-                    <input 
-                        className={styles.titleInput} 
-                        value={title} 
-                        onChange={(e) => setTitle(e.target.value)} 
-                        placeholder="Title" 
+                    <input
+                        className={styles.titleInput}
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Title"
                     />
-                    <input 
-                        className={styles.subtitleInput} 
-                        value={subtitle} 
-                        onChange={(e) => setSubtitle(e.target.value)} 
-                        placeholder="Subtitle" 
+                    <input
+                        className={styles.subtitleInput}
+                        value={subtitle}
+                        onChange={(e) => setSubtitle(e.target.value)}
+                        placeholder="Subtitle"
                     />
                     <textarea
                         ref={textareaRef}
@@ -108,6 +121,8 @@ const handleSave = async () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 allTags={allAvailableTags}
+                setAllTags={setAllAvailableTags}
+                campaignId={campaignId} // Ensure this variable is defined and passed
                 onAdd={async (name) => {
                     await handleAdd(name);
                     setIsModalOpen(false);

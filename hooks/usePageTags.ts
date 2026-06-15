@@ -1,18 +1,9 @@
 import { useState, useEffect } from 'react';
 import { addPageTag, removePageTag, getTagsForPage } from '@/lib/tagService';
 
-export const usePageTags = (pageId: string, initialTags: any[]) => {
-    const [tags, setTags] = useState(initialTags);
+export const usePageTags = (pageId: string) => { // 1. Removed initialTags
+    const [tags, setTags] = useState<any[]>([]); // 2. Start with an empty array
     const [isLoading, setIsLoading] = useState(false);
-
-    const handleAdd = async (name: string) => {
-        setIsLoading(true);
-        // Use the specific function that knows about page_id
-        await addPageTag(pageId, name);
-        const freshTags = await getTagsForPage(pageId);
-        setTags(freshTags);
-        setIsLoading(false);
-    };
 
     const fetchTags = async () => {
         setIsLoading(true);
@@ -22,17 +13,23 @@ export const usePageTags = (pageId: string, initialTags: any[]) => {
     };
 
     useEffect(() => {
-        fetchTags();
+        if (pageId) fetchTags();
     }, [pageId]);
+
+    const handleAdd = async (name: string) => {
+        setIsLoading(true);
+        await addPageTag(pageId, name);
+        await fetchTags(); // 3. Simply refresh the full list from the DB
+        setIsLoading(false);
+    };
 
     const handleRemove = async (tagId: string) => {
         setIsLoading(true);
         try {
             await removePageTag(pageId, tagId);
-            const freshTags = await getTagsForPage(pageId);
-            setTags(freshTags);
+            await fetchTags(); // 3. Simply refresh the full list from the DB
         } catch (error) {
-            console.error("FAILED to remove tag. Supabase Error Details:", error);
+            console.error("Error removing tag:", error);
         } finally {
             setIsLoading(false);
         }

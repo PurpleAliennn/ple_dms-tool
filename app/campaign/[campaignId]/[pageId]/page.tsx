@@ -11,8 +11,11 @@ import TagDisplay from "./components/UI/TagDisplay";
 import { usePageTags } from "@/hooks/usePageTags";
 import { getAllTags } from "@/lib/tagService";
 
-export default function DetailPage({ params }: { params: Promise<{ pageId: string }> }) {
-  const { pageId } = use(params);
+export default function DetailPage({ params }: { params: Promise<{ campaignId: string, pageId: string }> }) {
+  // Unwrapping the params Promise safely
+  const resolvedParams = use(params);
+  const { campaignId, pageId } = resolvedParams;
+
   const [pageLabel, setPageLabel] = useState("Loading...");
   const [cards, setCards] = useState<any[]>([]);
   const [pageAvailableTags, setPageAvailableTags] = useState<any[]>([]);
@@ -20,7 +23,59 @@ export default function DetailPage({ params }: { params: Promise<{ pageId: strin
   const [isNewCardModalOpen, setIsNewCardModalOpen] = useState(false);
   const [isPageTagModalOpen, setIsPageTagModalOpen] = useState(false);
 
-  const { tags: pageTags, handleAdd: addPageTag, handleRemove: removePageTag } = usePageTags(pageId, []);
+  const { tags: pageTags, handleAdd: addPageTag, handleRemove: removePageTag } = usePageTags(pageId);
+
+  // Fetch Page Data & Cards
+  useEffect(() => {
+    if (!campaignId || !pageId) return;
+
+    const fetchInitialData = async () => {
+      // 1. Fetch the page info
+      const { data: pageData, error: pageError } = await supabase
+        .from('pages')
+        .select('label, section_id')
+        .eq('id', pageId)
+        .single();
+
+      if (pageError || !pageData) {
+        setPageLabel("Page Not Found");
+        return;
+      }
+
+      // 2. Fetch the section to verify the campaign_id
+      const { data: sectionData, error: sectionError } = await supabase
+        .from('sections')
+        .select('campaign_id')
+        .eq('id', pageData.section_id)
+        .single();
+
+      // 3. Validate access
+      if (sectionError || sectionData?.campaign_id !== campaignId) {
+        setPageLabel("Access Denied: Page does not belong to this campaign");
+        return;
+      }
+
+      setPageLabel(pageData.label);
+
+      // 4. Fetch cards
+      const { data: cardData } = await supabase
+        .from('page_cards')
+        .select('*')
+        .eq('page_id', pageId)
+        .order('order_index');
+
+      if (cardData) setCards(cardData);
+    };
+    
+    fetchInitialData();
+  }, [pageId, campaignId]);
+
+  const openPageTagModal = async () => {
+    // campaignId is guaranteed to be a string here due to the 'use' hook
+    const tags = await getAllTags(campaignId); 
+    setPageAvailableTags(tags);
+    setIsPageTagModalOpen(true);
+  };
 
   const createCard = async (type: 'text' | 'character') => {
     const isChar = type === 'character';
@@ -28,15 +83,13 @@ export default function DetailPage({ params }: { params: Promise<{ pageId: strin
       ? { name: "Unnamed Character", class: "", race: "", hp: "", ac: "", imageUrl: "", str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10 } 
       : { text: "New card...", title: "New Card", subtitle: "" };
       
-    const defaultTitle = isChar ? "Unnamed Character" : "New Card";
-
     const { data } = await supabase
       .from('page_cards')
       .insert([{ 
           page_id: pageId, 
           type: type, 
           data: initialData, 
-          title: defaultTitle 
+          title: isChar ? "Unnamed Character" : "New Card"
       }])
       .select()
       .single();
@@ -45,30 +98,18 @@ export default function DetailPage({ params }: { params: Promise<{ pageId: strin
     setIsNewCardModalOpen(false);
   };
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      const { data: pageData } = await supabase.from('pages').select('label').eq('id', pageId).single();
-      setPageLabel(pageData?.label || "Page Not Found");
-
-      const { data: cardData } = await supabase.from('page_cards').select('*').eq('page_id', pageId).order('order_index');
-      if (cardData) setCards(cardData);
-    };
-    fetchInitialData();
-  }, [pageId]);
-
-  const openPageTagModal = async () => {
-    const tags = await getAllTags();
-    setPageAvailableTags(tags);
-    setIsPageTagModalOpen(true);
-  };
-
-  const handleCardsChange = (action: SetStateAction<any[]>) => {
+  const handleCardsChange = async (action: SetStateAction<any[]>) => {
     const newCards = typeof action === 'function' ? action(cards) : action;
     setCards(newCards);
-    const updates = newCards.map((card, index) => ({ id: card.id, order_index: index }));
-    supabase.from('page_cards').upsert(updates);
-  };
 
+    const updates = newCards.map((card, index) => ({ 
+        id: card.id, 
+        order_index: index 
+    }));
+
+    await supabase.from('page_cards').upsert(updates);
+  };
+  
   const handleDelete = async (id: string) => {
     await supabase.from('page_cards').delete().eq('id', id);
     setCards(cards.filter((card) => card.id !== id));
@@ -94,9 +135,9 @@ export default function DetailPage({ params }: { params: Promise<{ pageId: strin
           setItems={handleCardsChange}
           renderItem={(card) => (
             card.type === 'character' ? (
-              <CharacterCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} />
+              <CharacterCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} campaignId={campaignId}/>
             ) : (
-              <TextCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} />
+              <TextCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} campaignId={campaignId} />
             )
           )}
         />
@@ -107,10 +148,12 @@ export default function DetailPage({ params }: { params: Promise<{ pageId: strin
         isOpen={isPageTagModalOpen}
         onClose={() => setIsPageTagModalOpen(false)}
         allTags={pageAvailableTags}
+        setAllTags={setPageAvailableTags}
         onAdd={async (name) => {
           await addPageTag(name);
           setIsPageTagModalOpen(false);
         }}
+        campaignId={campaignId}
       />
 
       {isNewCardModalOpen && (

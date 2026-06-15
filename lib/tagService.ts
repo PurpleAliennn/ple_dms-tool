@@ -1,47 +1,49 @@
 import { supabase } from "@/lib/supabase";
+export const addPageTag = async (pageId: string, tagName: string) => {
+    // 1. Get the tag ID
+    const { data: tag } = await supabase.from('tags').select('id').eq('name', tagName).single();
+    if (!tag) return;
 
-export const addPageTag = async (pageId: string, name: string) => {
-  try {
-    // 1. Get/Create the tag
-    const { data: tag, error: tagError } = await supabase
-      .from('tags')
-      .upsert({ name: name.trim().toLowerCase() }, { onConflict: 'name' })
-      .select('id')
-      .single();
+    // 2. IMPORTANT: Check if it exists BEFORE inserting
+    const { data: existing } = await supabase
+        .from('page_tags')
+        .select('id')
+        .eq('page_id', pageId)
+        .eq('tag_id', tag.id);
 
-    if (tagError) throw tagError;
+    if (existing && existing.length > 0) {
+        console.warn("Tag already exists on this page");
+        return; 
+    }
 
-    // 2. Insert into page_tags (Specific to page_id)
-    const { error: insertError } = await supabase.from('page_tags').upsert({
-      page_id: pageId,
-      tag_id: tag.id
-    }, { onConflict: 'page_id, tag_id' }); // Use page_id here!
-
-    if (insertError) throw insertError;
-  } catch (err) {
-    console.error("DEBUG: addPageTag failed:", err);
-  }
+    // 3. Only insert if it's not already there
+    await supabase.from('page_tags').insert({ page_id: pageId, tag_id: tag.id });
 };
 
-export const addCardTag = async (cardId: string, name: string) => {
-  try {
-    const { data: tag, error: tagError } = await supabase
-      .from('tags')
-      .upsert({ name: name.trim().toLowerCase() }, { onConflict: 'name' })
-      .select('id')
-      .single();
+export const addCardTag = async (cardId: string, tagName: string) => {
+  // 1. Get the ID of the tag by name
+  const { data: tag, error: tagError } = await supabase
+    .from('tags')
+    .select('id')
+    .eq('name', tagName)
+    .single();
 
-    if (tagError) throw tagError;
+  if (tagError || !tag) return;
 
-    const { error: insertError } = await supabase.from('card_tags').upsert({
-      card_id: cardId,
-      tag_id: tag.id
-    }, { onConflict: 'card_id, tag_id' });
+  // 2. Check if the link already exists (The Prevention Step)
+  const { data: existing } = await supabase
+    .from('card_tags')
+    .select('id')
+    .eq('card_id', cardId)
+    .eq('tag_id', tag.id);
 
-    if (insertError) throw insertError;
-  } catch (err) {
-    console.error("DEBUG: addCardTag failed:", err);
+  if (existing && existing.length > 0) {
+    console.warn("Tag already exists on this card.");
+    return; // Stop here, don't insert!
   }
+
+  // 3. Perform the insert
+  await supabase.from('card_tags').insert({ card_id: cardId, tag_id: tag.id });
 };
 
 export const removeTag = async (table: string, foreignKeyColumn: string, id: string, tagId: string) => {
@@ -69,13 +71,24 @@ export const getTagsForCard = async (cardId: string) => {
     return [];
   }
 
-  console.log("Raw data from Supabase:", data); // Check if this matches your expectation
+  console.log("Raw data from Supabase:", data);
   return data || [];
 };
 
-export const getAllTags = async () => {
-  const { data } = await supabase.from('tags').select('id, name');
-  return data || [];
+export const getAllTags = async (campaignId: string) => {
+    if (!campaignId) return [];
+
+    const { data, error } = await supabase
+        .from('tags')
+        .select('id, name, campaign_id')
+        // Use .or to get tags that belong to this campaign OR are null (global)
+        .or(`campaign_id.eq.${campaignId},campaign_id.is.null`);
+    
+    if (error) {
+        console.error("Error fetching tags:", error.message);
+        return [];
+    }
+    return data || [];
 };
 
 export const removePageTag = async (pageId: string, tagId: string) => {

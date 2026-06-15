@@ -4,7 +4,7 @@ import React, { useState, use, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import styles from './layout.module.css';
-import { supabase } from '../../../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import SearchTags from './[pageId]/components/UI/SearchTags';
 
 export default function CampaignLayout({
@@ -17,6 +17,9 @@ export default function CampaignLayout({
   const { campaignId } = use(paramsPromise);
   const searchParams = useSearchParams();
 
+  const nameFromUrl = searchParams.get('name');
+  const [campaignName, setCampaignName] = useState(nameFromUrl || "Loading...");
+
   const [sections, setSections] = useState<any[]>([]);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,38 +27,53 @@ export default function CampaignLayout({
   const [inputValue, setInputValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'section' | 'page', id: string, sectionId?: string } | null>(null);
 
-useEffect(() => {
-  const scrollToId = searchParams.get('scrollTo');
-  
-  if (scrollToId) {
+  useEffect(() => {
+    // If we already have the name from URL, we don't strictly need to fetch
+    if (nameFromUrl) return;
 
-    const container = document.querySelector(`.${styles.mainContent}`) as HTMLElement;
-    if (container) {
-      container.style.scrollBehavior = 'auto'; 
-    }
+    const fetchCampaignName = async () => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('name')
+        .eq('id', campaignId)
+        .single();
 
-    requestAnimationFrame(() => {
-      const element = document.getElementById(scrollToId);
-      if (element && container) {
+      if (data) setCampaignName(data.name);
+      else setCampaignName("Untitled Campaign");
+    };
 
-        container.scrollTop = element.offsetTop - 20;
-        
-        element.classList.add(styles.highlight);
-        setTimeout(() => element.classList.remove(styles.highlight), 2000);
+    fetchCampaignName();
+  }, [campaignId, nameFromUrl]);
+
+  useEffect(() => {
+    const scrollToId = searchParams.get('scrollTo');
+
+    if (scrollToId) {
+
+      const container = document.querySelector(`.${styles.mainContent}`) as HTMLElement;
+      if (container) {
+        container.style.scrollBehavior = 'auto';
       }
-    });
-  }
-}, [searchParams]);
+
+      requestAnimationFrame(() => {
+        const element = document.getElementById(scrollToId);
+        if (element && container) {
+
+          container.scrollTop = element.offsetTop - 20;
+
+          element.classList.add(styles.highlight);
+          setTimeout(() => element.classList.remove(styles.highlight), 2000);
+        }
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchSidebarData = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('sections')
-        .select(`
-            id,
-            label,
-            pages (id, label)
-          `);
+        .select(`id, label, pages (id, label)`)
+        .eq('campaign_id', campaignId);
 
       if (data) {
         const formatted = data.map(section => ({
@@ -67,32 +85,61 @@ useEffect(() => {
           }))
         }));
         setSections(formatted);
-        const worldSection = formatted.find(s => s.title === 'World');
-        if (worldSection) setOpenSection(worldSection.id);
       }
     };
     fetchSidebarData();
-  }, []);
+  }, [campaignId]);
 
   const toggle = (section: string) => { setOpenSection(openSection === section ? null : section); };
-  
+
   const addSection = async (title: string) => {
     if (!title) return;
-    const { data, error } = await supabase.from('sections').insert([{ label: title }]).select().single();
-    if (data) setSections([...sections, { id: data.id, title: data.label, subSections: [] }]);
+
+    // Add the campaign_id here so the database link is established
+    const { data, error } = await supabase
+      .from('sections')
+      .insert([{
+        label: title,
+        campaign_id: campaignId // <--- This captures the current campaign ID
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating section:", error);
+      return;
+    }
+
+    if (data) {
+      setSections([...sections, { id: data.id, title: data.label, subSections: [] }]);
+    }
   };
 
   const addSubSection = async (sectionId: string, label: string) => {
     if (!label) return;
-    const { data, error } = await supabase.from('pages').insert([{ section_id: sectionId, label: label }]).select().single();
+
+    // 1. Insert the page
+    const { data, error } = await supabase
+      .from('pages')
+      .insert([{ section_id: sectionId, label: label }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating page:", error);
+      return;
+    }
+
+    // 2. Optimistic UI update
     if (data) {
       setSections(sections.map(sec => {
-        if (sec.id === sectionId) return { ...sec, subSections: [...sec.subSections, { id: data.id, label: data.label }] };
+        if (sec.id === sectionId) {
+          return { ...sec, subSections: [...sec.subSections, { id: data.id, label: data.label }] };
+        }
         return sec;
       }));
     }
   };
-
   const confirmDeleteSection = (id: string) => { setDeleteTarget({ type: 'section', id }); setIsModalOpen(true); };
   const confirmDeletePage = (id: string, sectionId: string) => { setDeleteTarget({ type: 'page', id, sectionId }); setIsModalOpen(true); };
   const deleteSection = async (sectionId: string) => { const { error } = await supabase.from('sections').delete().eq('id', sectionId); if (!error) setSections(sections.filter(s => s.id !== sectionId)); };
@@ -104,7 +151,8 @@ useEffect(() => {
     <div className={styles.appWrapper}>
 
       <header className={styles.mainHeader}>
-        <h1>[{campaignId}]</h1>
+        {/* Now displays the campaignName state instead of just the ID */}
+        <h1>{campaignName}</h1>
         <SearchTags />
       </header>
       
@@ -140,32 +188,32 @@ useEffect(() => {
 
       {isModalOpen && (
         <div className={styles.modalOverlay}>
-            <div className={styles.modalContent}>
-                {deleteTarget ? (
-                    <>
-                        <h3>Delete {deleteTarget.type}?</h3>
-                        <p>This action cannot be undone.</p>
-                        <div className={styles.modalButtons}>
-                            <button className={styles.cancelBtn} onClick={() => { setIsModalOpen(false); setDeleteTarget(null); }}>Cancel</button>
-                            <button className={styles.deleteBtn} onClick={async () => {
-                                if (deleteTarget.type === 'section') await deleteSection(deleteTarget.id);
-                                else await deletePage(deleteTarget.id, deleteTarget.sectionId!);
-                                setIsModalOpen(false);
-                                setDeleteTarget(null);
-                            }}>Delete</button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <h3>{modalConfig.type === 'category' ? 'New Category' : 'New Page'}</h3>
-                        <input className={styles.modalInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-                        <div className={styles.modalButtons}>
-                            <button onClick={() => setIsModalOpen(false)} className={styles.cancelBtn}>Cancel</button>
-                            <button onClick={handleModalSubmit} className={styles.confirmBtn}>Create</button>
-                        </div>
-                    </>
-                )}
-            </div>
+          <div className={styles.modalContent}>
+            {deleteTarget ? (
+              <>
+                <h3>Delete {deleteTarget.type}?</h3>
+                <p>This action cannot be undone.</p>
+                <div className={styles.modalButtons}>
+                  <button className={styles.cancelBtn} onClick={() => { setIsModalOpen(false); setDeleteTarget(null); }}>Cancel</button>
+                  <button className={styles.deleteBtn} onClick={async () => {
+                    if (deleteTarget.type === 'section') await deleteSection(deleteTarget.id);
+                    else await deletePage(deleteTarget.id, deleteTarget.sectionId!);
+                    setIsModalOpen(false);
+                    setDeleteTarget(null);
+                  }}>Delete</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3>{modalConfig.type === 'category' ? 'New Category' : 'New Page'}</h3>
+                <input className={styles.modalInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+                <div className={styles.modalButtons}>
+                  <button onClick={() => setIsModalOpen(false)} className={styles.cancelBtn}>Cancel</button>
+                  <button onClick={handleModalSubmit} className={styles.confirmBtn}>Create</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
