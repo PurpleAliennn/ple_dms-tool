@@ -70,8 +70,8 @@ console.log("Component Mounted! Campaign ID:", campaignId);
   return (
     <div style={{ padding: '20px' }}>
       <h1>Welcome to your new Campaign!</h1>
-      <p>It looks like you haven't created any pages yet.</p>
-      <h3>Getting Started:</h3>
+      <p>Looks like your adventures are yet to be written!</p>
+      <h3>How to start building your campaign:</h3>
       <ul>
         <li>Create a category with the button in the sidebar.</li>
         <li>Now you can open the category and add a page to it!</li>

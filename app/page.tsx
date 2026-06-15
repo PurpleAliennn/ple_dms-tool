@@ -34,28 +34,45 @@ export default function DashboardPage() {
         }
     };
 
+    const deleteCampaign = async (campaignId: string) => {
+        const { error } = await supabase
+            .from('campaigns')
+            .delete()
+            .eq('id', campaignId);
+
+        if (error) {
+            console.error("Error deleting campaign:", error);
+            alert("Failed to delete campaign.");
+        } else {
+            // Refresh your state or redirect
+            window.location.reload();
+        }
+    };
+
     return (
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1>My Campaigns</h1>
-                <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
-                    + New Campaign
-                </button>
             </header>
 
             <div className={styles.campaignGrid}>
-                {campaigns.map((camp) => (
-                    <Link
-                        key={camp.id}
-                        href={{
-                            pathname: `/campaign/${camp.id}`,
-                            query: { name: camp.name }
-                        }}
-                        className={styles.campaignCard}
-                    >
-                        <h3>{camp.name}</h3>
-                    </Link>
-                ))}
+                <div className={styles.campaigns}>
+                    {campaigns.map((camp) => (
+                        <Link
+                            key={camp.id}
+                            href={{
+                                pathname: `/campaign/${camp.id}`,
+                                query: { name: camp.name }
+                            }}
+                            className={styles.campaignCard}
+                        >
+                            <h3>{camp.name}</h3>
+                        </Link>
+                    ))}
+                </div>
+                <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
+                    + New Campaign
+                </button>
             </div>
 
             {isModalOpen && (
