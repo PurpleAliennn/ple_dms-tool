@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import styles from './Dashboard.module.css';
+import DeleteModal from './campaign/[campaignId]/[pageId]/components/UI/DeleteModal';
 
 export default function DashboardPage() {
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [campaignName, setCampaignName] = useState("");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCampaigns = async () => {
@@ -58,16 +61,22 @@ export default function DashboardPage() {
             <div className={styles.campaignGrid}>
                 <div className={styles.campaigns}>
                     {campaigns.map((camp) => (
-                        <Link
-                            key={camp.id}
-                            href={{
-                                pathname: `/campaign/${camp.id}`,
-                                query: { name: camp.name }
-                            }}
-                            className={styles.campaignCard}
-                        >
-                            <h3>{camp.name}</h3>
-                        </Link>
+                        <div key={camp.id} className={styles.campaignCardWrapper} style={{ position: 'relative' }}>
+                            <Link href={`/campaign/${camp.id}`} className={styles.campaignCard}>
+                                <h3>{camp.name}</h3>
+                            </Link>
+
+                            <button
+                                className={styles.deleteBtn}
+                                onClick={(e) => {
+                                    e.preventDefault(); // Prevents navigating to the campaign
+                                    setCampaignToDelete(camp.id);
+                                    setIsDeleteModalOpen(true);
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
                     ))}
                 </div>
                 <button className={styles.addButton} onClick={() => setIsModalOpen(true)}>
@@ -83,15 +92,27 @@ export default function DashboardPage() {
                             className={styles.modalInput}
                             value={campaignName}
                             onChange={(e) => setCampaignName(e.target.value)}
-                            placeholder="Campaign Name"
                         />
-                        <div className={styles.modalButtons}>
-                            <button className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancel</button>
-                            <button className={styles.confirmBtn} onClick={handleCreateCampaign}>Create</button>
-                        </div>
+                        <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+                        <button onClick={handleCreateCampaign}>Create</button>
                     </div>
                 </div>
             )}
+
+            {/* DELETE MODAL (using the DeleteModal component) */}
+            <DeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={async () => {
+                    if (campaignToDelete) {
+                        await deleteCampaign(campaignToDelete);
+                        setIsDeleteModalOpen(false);
+                    }
+                }}
+                itemName="this campaign"
+            />
         </div>
+
+
     );
 }

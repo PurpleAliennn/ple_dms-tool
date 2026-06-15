@@ -51,3 +51,33 @@ body {
     margin-top: 20px;
     font-size: 16px;
 }
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensures it is on top of everything */
+}
+
+.modalContent {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: black; /* Ensure text is readable */
+}
+
+.modalInput {
+  display: block;
+  width: 100%;
+  margin: 1rem 0;
+  padding: 0.5rem;
+}
