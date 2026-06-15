@@ -81,7 +81,7 @@ body {
   flex-shrink: 0;
   background-color: #283718;
   color: #fefae0;
-  padding: 15px 30px;
+  padding: 0 15px 30px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -248,4 +248,18 @@ body {
 
 .addCategoryBtn:hover {
   filter: brightness(1.05);
+}
+
+.campaignNav {
+  background-color: #283718;
+  padding: 15px 0 0 15px;
+}
+
+.backButton {
+  text-decoration: none;
+  color: #A4CCD9;
+}
+
+.backButton:hover {
+  color: #FEFADF;
 }

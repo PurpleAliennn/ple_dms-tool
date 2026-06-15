@@ -27,14 +27,12 @@ export function SortableItem({ id, children }: SortableItemProps) {
         <div
             ref={setNodeRef}
             style={style}
-            className={styles.wrapper} // The flex container
+            className={styles.wrapper}
         >
-            {/* The Handle */}
             <div className={styles.dragHandle} {...attributes} {...listeners}>
                 ⠿
             </div>
 
-            {/* The Card */}
             <div className={styles.content}>
                 {children}
             </div>

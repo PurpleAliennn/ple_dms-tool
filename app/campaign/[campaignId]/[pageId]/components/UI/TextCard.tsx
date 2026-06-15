@@ -17,12 +17,12 @@ export default function TextCard({
     id,
     initialData,
     onDelete,
-    campaignId // Added campaignId prop
+    campaignId
 }: {
     id: string,
     initialData: { text: string, title?: string, subtitle?: string },
     onDelete: (id: string) => void,
-    campaignId: string // Added campaignId prop
+    campaignId: string
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(initialData.title || "");
@@ -44,7 +44,6 @@ export default function TextCard({
 
     useEffect(() => {
         if (isModalOpen) {
-            // Fetch tags using the campaignId
             getAllTags(campaignId).then((tags) => setAllAvailableTags(tags as Tag[]));
         }
     }, [isModalOpen, campaignId]);
@@ -122,7 +121,7 @@ export default function TextCard({
                 onClose={() => setIsModalOpen(false)}
                 allTags={allAvailableTags}
                 setAllTags={setAllAvailableTags}
-                campaignId={campaignId} // Ensure this variable is defined and passed
+                campaignId={campaignId}
                 onAdd={async (name) => {
                     await handleAdd(name);
                     setIsModalOpen(false);

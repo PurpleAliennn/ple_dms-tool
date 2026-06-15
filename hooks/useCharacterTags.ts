@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { addCardTag, removeTag, getTagsForCard } from '@/lib/tagService';
 
 export const useCharacterTags = (cardId: string) => {
-    // 1. Initialize as empty array. Don't rely on initialTags to prevent sync conflicts.
     const [tags, setTags] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -13,7 +12,6 @@ export const useCharacterTags = (cardId: string) => {
         setIsLoading(false);
     };
 
-    // 2. Fetch only once when the cardId changes
     useEffect(() => {
         if (cardId) fetchTags();
     }, [cardId]);
@@ -24,8 +22,6 @@ export const useCharacterTags = (cardId: string) => {
             await addCardTag(cardId, name);
             const freshTags = await getTagsForCard(cardId);
 
-            // Use the functional updater pattern to ensure you are 
-            // using the absolute latest, cleanest state
             setTags(() => [...freshTags]);
         } catch (err) {
             console.error("Error adding card tag:", err);

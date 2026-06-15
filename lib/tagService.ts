@@ -1,10 +1,8 @@
 import { supabase } from "@/lib/supabase";
 export const addPageTag = async (pageId: string, tagName: string) => {
-    // 1. Get the tag ID
     const { data: tag } = await supabase.from('tags').select('id').eq('name', tagName).single();
     if (!tag) return;
 
-    // 2. IMPORTANT: Check if it exists BEFORE inserting
     const { data: existing } = await supabase
         .from('page_tags')
         .select('id')
@@ -16,12 +14,10 @@ export const addPageTag = async (pageId: string, tagName: string) => {
         return; 
     }
 
-    // 3. Only insert if it's not already there
     await supabase.from('page_tags').insert({ page_id: pageId, tag_id: tag.id });
 };
 
 export const addCardTag = async (cardId: string, tagName: string) => {
-  // 1. Get the ID of the tag by name
   const { data: tag, error: tagError } = await supabase
     .from('tags')
     .select('id')
@@ -30,7 +26,6 @@ export const addCardTag = async (cardId: string, tagName: string) => {
 
   if (tagError || !tag) return;
 
-  // 2. Check if the link already exists (The Prevention Step)
   const { data: existing } = await supabase
     .from('card_tags')
     .select('id')
@@ -39,10 +34,9 @@ export const addCardTag = async (cardId: string, tagName: string) => {
 
   if (existing && existing.length > 0) {
     console.warn("Tag already exists on this card.");
-    return; // Stop here, don't insert!
+    return;
   }
 
-  // 3. Perform the insert
   await supabase.from('card_tags').insert({ card_id: cardId, tag_id: tag.id });
 };
 
@@ -81,7 +75,6 @@ export const getAllTags = async (campaignId: string) => {
     const { data, error } = await supabase
         .from('tags')
         .select('id, name, campaign_id')
-        // Use .or to get tags that belong to this campaign OR are null (global)
         .or(`campaign_id.eq.${campaignId},campaign_id.is.null`);
     
     if (error) {
@@ -96,7 +89,7 @@ export const removePageTag = async (pageId: string, tagId: string) => {
     .from('page_tags')
     .delete()
     .eq('page_id', pageId)
-    .eq('tag_id', tagId); // Deleting by both keys
+    .eq('tag_id', tagId);
 };
 
 export const getTagsForPage = async (pageId: string) => {
@@ -122,7 +115,6 @@ interface TagResult {
 }
 
 export const searchAllByTag = async (tagName: string) => {
-  // 1. Fetch tags that match the search string
   const { data: tagMatches } = await supabase
     .from('tags')
     .select('id, name')
@@ -133,28 +125,24 @@ export const searchAllByTag = async (tagName: string) => {
   const tagIds = tagMatches.map(t => t.id);
   const tagMap = new Map(tagMatches.map(t => [t.id, t.name]));
 
-  // 2. Fetch Page tags
   const { data: pageResults } = await supabase
     .from('page_tags')
     .select('page_id, tag_id, pages(id, label)')
     .in('tag_id', tagIds);
 
-  // 3. Fetch Card tags
   const { data: cardResults } = await supabase
     .from('card_tags')
     .select('card_id, tag_id')
     .in('tag_id', tagIds);
 
-  // 4. Fetch page_id from 'page_cards' for the found cards
   const cardIds = cardResults?.map(c => c.card_id) || [];
   const { data: cardToPageLinks } = await supabase
     .from('page_cards')
-    .select('id, page_id, title') // Added 'title' here!
+    .select('id, page_id, title')
     .in('id', cardIds);
 
   const cardToPageMap = new Map(cardToPageLinks?.map(c => [c.id, c.page_id]));
 
-  // 5. Collect all unique page IDs to fetch their labels
   const pageIds = new Set([
     ...(pageResults?.map(p => p.page_id) || []),
     ...(cardToPageLinks?.map(c => c.page_id) || [])
@@ -167,7 +155,6 @@ export const searchAllByTag = async (tagName: string) => {
 
   const pageLabelMap = new Map(allPages?.map(p => [p.id, p.label]));
 
-  // 6. Assemble the final array
   return [
     ...(pageResults || []).map(p => ({
       type: 'page' as const,
@@ -183,7 +170,7 @@ export const searchAllByTag = async (tagName: string) => {
         type: 'card' as const,
         id: c.card_id,
         tagName: tagMap.get(c.tag_id),
-        cardTitle: cardInfo?.title || "Untitled Card", // Fetching the title
+        cardTitle: cardInfo?.title || "Untitled Card",
         pageId: parentPageId,
         pageLabel: pageLabelMap.get(parentPageId) || "Untitled Page"
       };

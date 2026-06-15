@@ -9,13 +9,12 @@ interface Tag {
     campaign_id?: string;
 }
 
-// 1. Define the handler type clearly
 type OnAddHandler = (name: string) => void;
 
 interface TagModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: OnAddHandler; // Use the clear type here
+    onAdd: OnAddHandler; 
     allTags: Tag[];
     setAllTags: React.Dispatch<React.SetStateAction<Tag[]>>;
     campaignId: string;
@@ -71,7 +70,6 @@ export default function TagModal({
                 <div className={styles.tagList}>
                     {allTags.map((t) => (
                         <div key={t.id} className={styles.tagRow}>
-                            {/* Use a simple wrapper to ensure only the name is passed */}
                             <button className={styles.tagBtn} onClick={() => onAdd(t.name)}>
                                 {t.name}
                             </button>

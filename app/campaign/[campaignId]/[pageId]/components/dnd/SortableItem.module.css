@@ -1,15 +1,15 @@
 
 .wrapper {
-  display: flex;         /* This puts the handle and card side-by-side */
-  flex-direction: row;   /* Explicitly horizontal */
+  display: flex;
+  flex-direction: row;
   align-items: flex-start; 
-  gap: 12px;             /* Space between handle and card */
-  width: 100%;           /* Ensure it takes full width of the column */
+  gap: 12px;   
+  width: 100%;
   margin-bottom: 1rem;
 }
 
 .dragHandle {
-  flex-shrink: 0;        /* IMPORTANT: Stops the handle from squishing */
+  flex-shrink: 0;
   margin-left: -40px;
   cursor: grab;
   padding: 10px 5px;
@@ -26,8 +26,8 @@
 }
 
 .content {
-  flex-grow: 1;          /* Tells the card to fill the remaining width */
-  min-width: 0;          /* Prevents the card from breaking flexbox layout */
+  flex-grow: 1;
+  min-width: 0;
 }
 
 .dragging {

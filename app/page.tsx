@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import styles from './Dashboard.module.css'; // Make sure to match your CSS naming
+import styles from './Dashboard.module.css';
 
 export default function DashboardPage() {
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [campaignName, setCampaignName] = useState("");
 
-    // 1. Fetch campaigns on load
     useEffect(() => {
         const fetchCampaigns = async () => {
             const { data } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false });
@@ -19,7 +18,6 @@ export default function DashboardPage() {
         fetchCampaigns();
     }, []);
 
-    // 2. Handle creation
     const handleCreateCampaign = async () => {
         if (!campaignName) return;
 
@@ -30,7 +28,7 @@ export default function DashboardPage() {
             .single();
 
         if (data) {
-            setCampaigns([data, ...campaigns]); // Add to the top of the list
+            setCampaigns([data, ...campaigns]);
             setCampaignName("");
             setIsModalOpen(false);
         }
@@ -51,7 +49,7 @@ export default function DashboardPage() {
                         key={camp.id}
                         href={{
                             pathname: `/campaign/${camp.id}`,
-                            query: { name: camp.name } // Pass the name in the URL query
+                            query: { name: camp.name }
                         }}
                         className={styles.campaignCard}
                     >
@@ -60,7 +58,6 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Modal matching your existing app style */}
             {isModalOpen && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>

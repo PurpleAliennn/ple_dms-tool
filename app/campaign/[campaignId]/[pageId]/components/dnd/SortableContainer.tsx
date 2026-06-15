@@ -1,6 +1,6 @@
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ReactNode } from 'react'; // 1. Added import for ReactNode
+import { ReactNode } from 'react';
 import { SortableItem } from './SortableItem';
 
 interface SortableContainerProps {
@@ -9,13 +9,11 @@ interface SortableContainerProps {
   renderItem: (item: any) => ReactNode;
 }
 
-// 2. Explicitly tell the function to use the interface
 export function SortableContainer({ items, setItems, renderItem }: SortableContainerProps) {
   
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     
-    // 3. Safety check: ensure 'over' exists (if you drop outside)
     if (!over) return; 
 
     if (active.id !== over.id) {

@@ -7,7 +7,6 @@ import TagDisplay from "./TagDisplay";
 import TagModal from "./TagModal";
 import { getAllTags } from "@/lib/tagService";
 
-// Ensures type safety for your tags across the component
 interface Tag {
     id: string;
     name: string;
@@ -18,7 +17,7 @@ export default function CharacterCard({
     id,
     initialData,
     onDelete,
-    campaignId // Ensure this is passed from your parent/context
+    campaignId 
 }: {
     id: string;
     initialData: any;
@@ -32,12 +31,10 @@ export default function CharacterCard({
 
     const { tags, handleAdd, handleRemove } = useCharacterTags(id);
 
-    // Fetch tags when modal opens, filtered by the campaign
     useEffect(() => {
         if (isModalOpen) {
-            // Pass the campaignId to ensure we only get tags for this campaign
             getAllTags(campaignId).then((tags) => {
-                console.log("Tags fetched for modal:", tags); // DEBUG: check if this returns data
+                console.log("Tags fetched for modal:", tags);
                 setAllAvailableTags(tags as Tag[]);
             });
         }

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { addPageTag, removePageTag, getTagsForPage } from '@/lib/tagService';
 
-export const usePageTags = (pageId: string) => { // 1. Removed initialTags
-    const [tags, setTags] = useState<any[]>([]); // 2. Start with an empty array
+export const usePageTags = (pageId: string) => {
+    const [tags, setTags] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchTags = async () => {
@@ -19,7 +19,7 @@ export const usePageTags = (pageId: string) => { // 1. Removed initialTags
     const handleAdd = async (name: string) => {
         setIsLoading(true);
         await addPageTag(pageId, name);
-        await fetchTags(); // 3. Simply refresh the full list from the DB
+        await fetchTags(); 
         setIsLoading(false);
     };
 
@@ -27,7 +27,7 @@ export const usePageTags = (pageId: string) => { // 1. Removed initialTags
         setIsLoading(true);
         try {
             await removePageTag(pageId, tagId);
-            await fetchTags(); // 3. Simply refresh the full list from the DB
+            await fetchTags();
         } catch (error) {
             console.error("Error removing tag:", error);
         } finally {

@@ -28,7 +28,6 @@ export default function CampaignLayout({
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'section' | 'page', id: string, sectionId?: string } | null>(null);
 
   useEffect(() => {
-    // If we already have the name from URL, we don't strictly need to fetch
     if (nameFromUrl) return;
 
     const fetchCampaignName = async () => {
@@ -95,12 +94,11 @@ export default function CampaignLayout({
   const addSection = async (title: string) => {
     if (!title) return;
 
-    // Add the campaign_id here so the database link is established
     const { data, error } = await supabase
       .from('sections')
       .insert([{
         label: title,
-        campaign_id: campaignId // <--- This captures the current campaign ID
+        campaign_id: campaignId
       }])
       .select()
       .single();
@@ -118,7 +116,6 @@ export default function CampaignLayout({
   const addSubSection = async (sectionId: string, label: string) => {
     if (!label) return;
 
-    // 1. Insert the page
     const { data, error } = await supabase
       .from('pages')
       .insert([{ section_id: sectionId, label: label }])
@@ -130,7 +127,6 @@ export default function CampaignLayout({
       return;
     }
 
-    // 2. Optimistic UI update
     if (data) {
       setSections(sections.map(sec => {
         if (sec.id === sectionId) {
@@ -150,12 +146,17 @@ export default function CampaignLayout({
   return (
     <div className={styles.appWrapper}>
 
+      <div className={styles.campaignNav}>
+        <Link href="/" className={styles.backButton}>
+          ← Back to Campaigns
+        </Link>
+      </div>
+
       <header className={styles.mainHeader}>
-        {/* Now displays the campaignName state instead of just the ID */}
         <h1>{campaignName}</h1>
         <SearchTags />
       </header>
-      
+
       <div className={styles.bodyLayout}>
         <aside className={styles.sidebar}>
           {sections.map((section) => (
