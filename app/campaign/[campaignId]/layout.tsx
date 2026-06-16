@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import styles from './layout.module.css';
 import { supabase } from '../../../lib/supabase';
 import SearchTags from './[pageId]/components/UI/SearchTags';
+import '../../globals.css'
 
 export default function CampaignLayout({
   children,

@@ -17,7 +17,7 @@ export default function CharacterCard({
     id,
     initialData,
     onDelete,
-    campaignId 
+    campaignId
 }: {
     id: string;
     initialData: any;
@@ -157,7 +157,13 @@ export default function CharacterCard({
                     <div className={styles.statsGrid}>
                         {['str', 'dex', 'con', 'wis', 'int', 'cha'].map(stat => (
                             <div key={stat} className={styles.statBox}>
-                                <div className={styles.mod}>+{Math.floor(((Number(data[stat]) || 10) - 10) / 2)}</div>
+                                <div className={styles.mod}>
+                                    {(() => {
+                                        const score = Number(data[stat]) || 10;
+                                        const mod = Math.floor((score - 10) / 2);
+                                        return mod >= 0 ? `+${mod}` : mod;
+                                    })()}
+                                </div>
                                 <div className={styles.score}>{data[stat] || "--"}</div>
                                 <div className={styles.label}>{stat}</div>
                             </div>
@@ -172,7 +178,7 @@ export default function CharacterCard({
                 onClose={() => setIsModalOpen(false)}
                 allTags={allAvailableTags}
                 setAllTags={setAllAvailableTags}
-                campaignId={campaignId} 
+                campaignId={campaignId}
                 onAdd={async (name) => {
                     await handleAdd(name);
                     setIsModalOpen(false);

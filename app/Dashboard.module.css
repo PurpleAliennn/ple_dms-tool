@@ -5,7 +5,7 @@ body {
 }
 
 .header {
-  height: 60px;
+  height: 110px;
   flex-shrink: 0;
   background-color: #283718;
   color: #fefae0;
@@ -15,21 +15,24 @@ body {
   align-items: center;
 }
 
+.header h1 {
+  font-size: 2.5rem;
+}
+
 .campaignGrid {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: start;
+    margin-left: 25px;
     height: 100%;
     margin-top: 50px;
 }
 
 .campaignCard {
-    background-color: #9DAD5C;
-    border-radius: 10px;
-    padding: 10px;
     text-decoration: none;
     color:#283718;
+    font-size: 20px;
 }
 
 .campaignCard:hover {
@@ -38,7 +41,7 @@ body {
 
 .campaigns {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 10px;
 }
 
@@ -66,7 +69,7 @@ body {
 }
 
 .modalContent {
-  background: white;
+  background: #9DAD5C;
   padding: 2rem;
   border-radius: 8px;
   width: 90%;
@@ -75,9 +78,79 @@ body {
   color: black; /* Ensure text is readable */
 }
 
+.modalContent h3 {
+  font-size: 20px;
+  color:#283718;
+}
+
 .modalInput {
   display: block;
   width: 100%;
   margin: 1rem 0;
-  padding: 0.5rem;
+  padding: 10px;
+  background-color: #fefae0;
+  border-radius: 10px;
+}
+
+.campaignCardWrapper {
+    background-color: #9DAD5C;
+    border-radius: 10px;
+    padding:20px;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.deleteBtn {
+  font-size: 30px;
+}
+
+.deleteBtn:hover {
+  color: #EC2C2C;
+}
+
+.cancelBtn {
+    background: #BE6B25;
+    color: #FEFADF;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    filter: brightness(1.1);
+}
+
+.createBtn {
+    background: #283718;
+    color: #FEFADF;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.createBtn:hover {
+    filter: brightness(1.5);
+}
+
+.modalActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.deleteModalBtn {
+    background: #EC2C2C;
+    color: #FEFADF;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.deleteModalBtn:hover {
+    filter: brightness(1.1);
 }

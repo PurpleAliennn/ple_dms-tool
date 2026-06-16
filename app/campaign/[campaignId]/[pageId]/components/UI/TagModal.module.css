@@ -22,3 +22,77 @@
   min-width: 300px;
   color: #283718;
 }
+
+.modalContent input {
+  background-color: #FEFADF;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.tagList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tagBtn {
+  background-color: #A4CCD9; 
+  color: #283718;     
+  padding: 6px 12px;
+  border-radius: 10px;  
+  font-size: 14px;
+  font-weight: 500;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+  border: none;
+}
+
+.tagBtn:hover {
+    filter: brightness(1.1);
+}
+
+.deleteBtn {
+  border: none;
+  background: none;
+  margin-left: 10px;
+}
+
+.deleteBtn:hover {
+  color: #EC2C2C;
+}
+
+.cancelBtn {
+  background: #BE6B25;
+  color: #FEFADF;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+    filter: brightness(1.1);
+}
+
+.saveBtn {
+  background: #616B39;
+  color: #FEFADF;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.saveBtn:hover {
+    filter: brightness(1.1);
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+}
+
+.modalContent h3 {
+  font-size: 20px;
+}

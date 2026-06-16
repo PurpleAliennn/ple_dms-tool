@@ -2,6 +2,7 @@
     background-color: #9DAD5C;
     border-radius: 10px;
     padding: 20px;
+    color:#283718;
 }
 
 .headerRow {
@@ -203,6 +204,10 @@
     cursor: pointer;
 }
 
+.cancelBtn:hover {
+    filter: brightness(1.1);
+}
+
 .saveBtn {
     background: #616B39;
     color: #FEFADF;
@@ -212,6 +217,10 @@
     cursor: pointer;
 }
 
+.saveBtn:hover {
+    filter: brightness(1.1);
+}
+
 .deleteBtn {
     background: #EC2C2C;
     color: #FEFADF;
@@ -219,6 +228,10 @@
     border: none;
     border-radius: 10px;
     cursor: pointer;
+}
+
+.deleteBtn:hover {
+    filter: brightness(1.1);
 }
 
 .cardActions {

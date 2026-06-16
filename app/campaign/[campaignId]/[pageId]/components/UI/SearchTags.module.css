@@ -13,6 +13,7 @@
   border-radius: 8px;
   padding: 5px;
   box-sizing: border-box;
+  color:#283718;
 }
 
 .hasResults {
@@ -74,7 +75,7 @@
 }
 
 .resultItem:hover {
-    background-color: #f0f0f0;
+    background-color: #A4CCD9;
 }
 
 .highlight {

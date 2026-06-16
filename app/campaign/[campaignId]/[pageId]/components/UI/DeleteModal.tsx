@@ -21,9 +21,9 @@ export default function DeleteModal({
             <div className={styles.modalContent}>
                 <h3>Delete {itemName}?</h3>
                 <p>Are you sure you want to delete this campaign? This can't be reversed.</p>
-                <div className="actions">
-                    <button onClick={onClose}> Cancel </button>
-                    <button onClick={onConfirm}> Delete </button>
+                <div className={styles.modalActions}>
+                    <button className={styles.cancelBtn} onClick={onClose}> Cancel </button>
+                    <button className={styles.deleteModalBtn} onClick={onConfirm}> Delete </button>
                 </div>
             </div>
         </div>

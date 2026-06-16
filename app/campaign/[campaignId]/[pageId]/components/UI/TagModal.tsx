@@ -14,7 +14,7 @@ type OnAddHandler = (name: string) => void;
 interface TagModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: OnAddHandler; 
+    onAdd: OnAddHandler;
     allTags: Tag[];
     setAllTags: React.Dispatch<React.SetStateAction<Tag[]>>;
     campaignId: string;
@@ -72,13 +72,17 @@ export default function TagModal({
                         <div key={t.id} className={styles.tagRow}>
                             <button className={styles.tagBtn} onClick={() => onAdd(t.name)}>
                                 {t.name}
+                                <span
+                                    className={styles.deleteBtn}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // CRITICAL: Prevents the button click
+                                        deleteTag(t.id, e);
+                                    }}
+                                >
+                                    ×
+                                </span>
                             </button>
-                            <button
-                                className={styles.deleteBtn}
-                                onClick={(e) => deleteTag(t.id, e)}
-                            >
-                                ×
-                            </button>
+
                         </div>
                     ))}
                 </div>
@@ -90,8 +94,8 @@ export default function TagModal({
                 />
 
                 <div className={styles.modalActions}>
-                    <button onClick={onClose}>Cancel</button>
-                    <button onClick={handleCreateTag}>Save Tag</button>
+                    <button className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+                    <button className={styles.saveBtn} onClick={handleCreateTag}>Save Tag</button>
                 </div>
             </div>
         </div>

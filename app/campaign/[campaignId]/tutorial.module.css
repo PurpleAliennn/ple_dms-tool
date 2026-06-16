@@ -1,0 +1,19 @@
+.tutorialBody h1{
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.tutorialBody p{
+    font-size: 18px;
+}
+
+.tutorialBody h3{
+    font-size: 20;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.tutorialBody ul{
+    font-size: 18px;
+}

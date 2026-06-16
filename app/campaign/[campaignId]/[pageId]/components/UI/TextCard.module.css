@@ -40,7 +40,7 @@
   margin: 0 0 16px 0;
   white-space: pre-wrap;
   color: #283718;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .cancelBtn {
@@ -52,6 +52,10 @@
   cursor: pointer;
 }
 
+.cancelBtn:hover {
+    filter: brightness(1.1);
+}
+
 .saveBtn {
   background: #616B39;
   color: #FEFADF;
@@ -59,6 +63,10 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.saveBtn:hover {
+    filter: brightness(1.1);
 }
 
 .deleteBtn {
@@ -70,16 +78,20 @@
   cursor: pointer;
 }
 
+.deleteBtn:hover {
+    filter: brightness(1.1);
+}
+
 .cardTitle {
-  margin: 10px 0 2px 0;
-  font-size: 1.2rem;
+  margin: 0 0 2px 0;
+  font-size: 23px;
   font-weight: bold;
   color: #283718;
 }
 
 .cardSubtitle {
   margin: 0 0 10px 0;
-  font-size: 0.9rem;
+  font-size: 15px;
   color: #283718;
   font-style: italic;
 }

@@ -157,9 +157,9 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <h3>Add a New Card</h3>
-            <button onClick={() => createCard('text')}>Text Card</button>
-            <button onClick={() => createCard('character')}>Character Card</button>
-            <button onClick={() => setIsNewCardModalOpen(false)}>Cancel</button>
+            <button className={styles.modalButtonCard} onClick={() => createCard('text')}>Text Card</button>
+            <button className={styles.modalButtonCard} onClick={() => createCard('character')}>Character Card</button>
+            <button className={styles.modalButtonCancel} onClick={() => setIsNewCardModalOpen(false)}>Cancel</button>
           </div>
         </div>
       )}

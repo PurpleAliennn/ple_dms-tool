@@ -39,3 +39,7 @@
     background: none;
     border: none;
 }
+
+.removeBtn:hover {
+  color: #EC2C2C;
+}

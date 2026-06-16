@@ -47,7 +47,6 @@ export default function DashboardPage() {
             console.error("Error deleting campaign:", error);
             alert("Failed to delete campaign.");
         } else {
-            // Refresh your state or redirect
             window.location.reload();
         }
     };
@@ -69,12 +68,12 @@ export default function DashboardPage() {
                             <button
                                 className={styles.deleteBtn}
                                 onClick={(e) => {
-                                    e.preventDefault(); // Prevents navigating to the campaign
+                                    e.preventDefault();
                                     setCampaignToDelete(camp.id);
                                     setIsDeleteModalOpen(true);
                                 }}
                             >
-                                Delete
+                                🗑
                             </button>
                         </div>
                     ))}
@@ -93,13 +92,14 @@ export default function DashboardPage() {
                             value={campaignName}
                             onChange={(e) => setCampaignName(e.target.value)}
                         />
-                        <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-                        <button onClick={handleCreateCampaign}>Create</button>
+                        <div className={styles.modalActions}>
+                            <button className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className={styles.createBtn} onClick={handleCreateCampaign}>Create</button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* DELETE MODAL (using the DeleteModal component) */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}

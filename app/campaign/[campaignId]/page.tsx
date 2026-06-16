@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import styles from "./tutorial.module.css"
 
 export default function CampaignOverviewPage({ params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = use(params);
@@ -68,14 +69,14 @@ console.log("Component Mounted! Campaign ID:", campaignId);
 
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className={styles.tutorialBody}>
       <h1>Welcome to your new Campaign!</h1>
       <p>Looks like your adventures are yet to be written!</p>
       <h3>How to start building your campaign:</h3>
       <ul>
-        <li>Create a category with the button in the sidebar.</li>
-        <li>Now you can open the category and add a page to it!</li>
-        <li>Within a page you can add cards to customise how you want to track your campaign</li>
+        <li>1. Create a category with the button in the sidebar.</li>
+        <li>2. Now you can open the category and add a page to it!</li>
+        <li>3. Within a page you can add cards to customise how you want to track your campaign</li>
       </ul>
     </div>
   );
