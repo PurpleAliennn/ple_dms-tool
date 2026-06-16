@@ -1,10 +1,12 @@
 .tutorialBody h1{
     font-size: 30px;
     font-weight: bold;
+    color:#283718;
 }
 
 .tutorialBody p{
     font-size: 18px;
+    color:#283718;
 }
 
 .tutorialBody h3{
@@ -12,8 +14,10 @@
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
+    color:#283718;
 }
 
 .tutorialBody ul{
     font-size: 18px;
+    color:#283718;
 }
