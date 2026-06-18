@@ -114,26 +114,37 @@ interface TagResult {
   card_id?: string;
 }
 
-export const searchAllByTag = async (tagName: string) => {
-  const { data: tagMatches } = await supabase
+export const searchAllByTag = async (tagName: string, campaignId: string) => {
+  const { data: tagMatches, error: tagError } = await supabase
     .from('tags')
     .select('id, name')
-    .ilike('name', `%${tagName}%`);
+    .ilike('name', `%${tagName}%`)
+    .or(`campaign_id.eq.${campaignId},campaign_id.is.null`);
 
-  if (!tagMatches || tagMatches.length === 0) return [];
+  if (tagError || !tagMatches || tagMatches.length === 0) return [];
 
   const tagIds = tagMatches.map(t => t.id);
   const tagMap = new Map(tagMatches.map(t => [t.id, t.name]));
 
   const { data: pageResults } = await supabase
     .from('page_tags')
-    .select('page_id, tag_id, pages(id, label)')
-    .in('tag_id', tagIds);
+    .select(`
+      page_id, 
+      tag_id, 
+      pages!inner(id, label, sections!inner(campaign_id))
+    `)
+    .in('tag_id', tagIds)
+    .eq('pages.sections.campaign_id', campaignId);
 
   const { data: cardResults } = await supabase
     .from('card_tags')
-    .select('card_id, tag_id')
-    .in('tag_id', tagIds);
+    .select(`
+      card_id, 
+      tag_id, 
+      page_cards!inner(id, page_id, title, pages!inner(sections!inner(campaign_id)))
+    `)
+    .in('tag_id', tagIds)
+    .eq('page_cards.pages.sections.campaign_id', campaignId);
 
   const cardIds = cardResults?.map(c => c.card_id) || [];
   const { data: cardToPageLinks } = await supabase
@@ -141,12 +152,10 @@ export const searchAllByTag = async (tagName: string) => {
     .select('id, page_id, title')
     .in('id', cardIds);
 
-  const cardToPageMap = new Map(cardToPageLinks?.map(c => [c.id, c.page_id]));
-
   const pageIds = new Set([
     ...(pageResults?.map(p => p.page_id) || []),
     ...(cardToPageLinks?.map(c => c.page_id) || [])
-  ].filter(Boolean));
+  ].filter(Boolean) as string[]);
 
   const { data: allPages } = await supabase
     .from('pages')

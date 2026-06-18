@@ -10,23 +10,21 @@ export default function SearchTags() {
 
     const params = useParams();
     const router = useRouter();
-    const campaignId = params.campaignId as string;
+    const campaignId = (params?.campaignId as string) || "";
 
     useEffect(() => {
-
-        if (query.trim().length < 2) {
+        if (!campaignId || query.trim().length < 2) {
             setResults([]);
             return;
         }
 
-
         const handler = setTimeout(async () => {
-            const data = await searchAllByTag(query.trim());
+            const data = await searchAllByTag(query.trim(), campaignId);
             setResults(data);
         }, 100);
 
         return () => clearTimeout(handler);
-    }, [query]);
+    }, [query, campaignId]);;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
