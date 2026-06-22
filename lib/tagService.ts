@@ -1,20 +1,20 @@
 import { supabase } from "@/lib/supabase";
 export const addPageTag = async (pageId: string, tagName: string) => {
-    const { data: tag } = await supabase.from('tags').select('id').eq('name', tagName).single();
-    if (!tag) return;
+  const { data: tag } = await supabase.from('tags').select('id').eq('name', tagName).single();
+  if (!tag) return;
 
-    const { data: existing } = await supabase
-        .from('page_tags')
-        .select('id')
-        .eq('page_id', pageId)
-        .eq('tag_id', tag.id);
+  const { data: existing } = await supabase
+    .from('page_tags')
+    .select('id')
+    .eq('page_id', pageId)
+    .eq('tag_id', tag.id);
 
-    if (existing && existing.length > 0) {
-        console.warn("Tag already exists on this page");
-        return; 
-    }
+  if (existing && existing.length > 0) {
+    console.warn("Tag already exists on this page");
+    return;
+  }
 
-    await supabase.from('page_tags').insert({ page_id: pageId, tag_id: tag.id });
+  await supabase.from('page_tags').insert({ page_id: pageId, tag_id: tag.id });
 };
 
 export const addCardTag = async (cardId: string, tagName: string) => {
@@ -70,18 +70,18 @@ export const getTagsForCard = async (cardId: string) => {
 };
 
 export const getAllTags = async (campaignId: string) => {
-    if (!campaignId) return [];
+  if (!campaignId) return [];
 
-    const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, campaign_id')
-        .or(`campaign_id.eq.${campaignId},campaign_id.is.null`);
-    
-    if (error) {
-        console.error("Error fetching tags:", error.message);
-        return [];
-    }
-    return data || [];
+  const { data, error } = await supabase
+    .from('tags')
+    .select('id, name, campaign_id')
+    .or(`campaign_id.eq.${campaignId},campaign_id.is.null`);
+
+  if (error) {
+    console.error("Error fetching tags:", error.message);
+    return [];
+  }
+  return data || [];
 };
 
 export const removePageTag = async (pageId: string, tagId: string) => {
@@ -141,7 +141,7 @@ export const searchAllByTag = async (tagName: string, campaignId: string) => {
     .select(`
       card_id, 
       tag_id, 
-      page_cards!inner(id, page_id, title, pages!inner(sections!inner(campaign_id)))
+      page_cards!inner(id, page_id, title, type, pages!inner(sections!inner(campaign_id)))
     `)
     .in('tag_id', tagIds)
     .eq('page_cards.pages.sections.campaign_id', campaignId);
@@ -167,22 +167,28 @@ export const searchAllByTag = async (tagName: string, campaignId: string) => {
   return [
     ...(pageResults || []).map(p => ({
       type: 'page' as const,
+      card_type: 'page',
       id: p.page_id,
       tagName: tagMap.get(p.tag_id),
       pageLabel: pageLabelMap.get(p.page_id) || "Untitled Page"
     })),
+
     ...(cardResults || []).map(c => {
       const cardInfo = cardToPageLinks?.find(link => link.id === c.card_id);
       const parentPageId = cardInfo?.page_id;
 
+      const dbType = (c.page_cards as any)?.type;
+
       return {
         type: 'card' as const,
+        card_type: dbType,
         id: c.card_id,
         tagName: tagMap.get(c.tag_id),
         cardTitle: cardInfo?.title || "Untitled Card",
         pageId: parentPageId,
         pageLabel: pageLabelMap.get(parentPageId) || "Untitled Page"
       };
+
     })
   ];
 };

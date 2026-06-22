@@ -39,6 +39,7 @@ export default function SearchTags() {
     }, []);
 
     const handleNavigate = (item: any) => {
+        console.log("Target ID:", item.type === 'page' ? `page-${item.id}` : `card-${item.id}`);
         setResults([]);
         setQuery("");
 
@@ -49,16 +50,21 @@ export default function SearchTags() {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             element.classList.add(styles.highlight);
             setTimeout(() => element.classList.remove(styles.highlight), 2000);
+            console.log("Element found on current page!");
         } else {
             const targetPath = `/campaign/${campaignId}/${item.type === 'page' ? item.id : item.pageId}`;
             router.push(`${targetPath}?scrollTo=${elementId}`);
+            console.log("Element not found, navigating to:", targetPath);
         }
     };
 
     const groupedResults = results.reduce((acc: any, item) => {
-        const label = item.pageLabel || "Unassigned";
-        if (!acc[label]) acc[label] = [];
-        acc[label].push(item);
+        console.log("Search Item Data:", item);
+
+        const tagName = item.tagName;
+        if (!acc[tagName]) acc[tagName] = [];
+        acc[tagName].push(item);
+
         return acc;
     }, {});
 
@@ -76,18 +82,27 @@ export default function SearchTags() {
 
             {results.length > 0 && (
                 <div className={styles.searchResultsList}>
-                    {Object.entries(groupedResults).map(([pageLabel, items]: [string, any]) => (
-                        <ul key={pageLabel} style={{ padding: '0 10px', margin: 0 }}>
-                            {items.map((item: any, idx: number) => (
-                                <li
-                                    key={idx}
-                                    onClick={() => handleNavigate(item)}
-                                    className={styles.resultItem}
-                                >
-                                    {item.type === 'page' ? `Page: ${pageLabel}` : `Card: ${item.cardTitle}`}
-                                </li>
-                            ))}
-                        </ul>
+                    {Object.entries(groupedResults).map(([tagName, items]: [string, any]) => (
+                        <div key={tagName} className={styles.tagGroup}>
+                            <h4 className={styles.tagHeader}>{tagName}</h4>
+
+                            <ul className={styles.itemList}>
+                                {items.map((item: any, idx: number) => (
+                                    <li
+                                        key={idx}
+                                        onClick={() => handleNavigate(item)}
+                                        className={styles.resultItem}
+                                    >
+                                        <span className={`${styles.itemBadge} ${styles[item.card_type]}`}>
+                                            {item.card_type || item.type}
+                                        </span>
+                                        <span className={styles.itemTitle}>
+                                            {item.type === 'page' ? item.pageLabel : item.cardTitle}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     ))}
                 </div>
             )}

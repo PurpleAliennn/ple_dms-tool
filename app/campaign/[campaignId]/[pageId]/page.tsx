@@ -5,31 +5,55 @@ import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 import TextCard from "./components/UI/TextCard";
 import CharacterCard from "./components/UI/CharacterCard";
+import TimelineCard from "./components/UI/TimelineCard"; // Ensure this path is correct
 import { SortableContainer } from "./components/dnd/SortableContainer";
 import TagModal from "./components/UI/TagModal";
 import TagDisplay from "./components/UI/TagDisplay";
 import { usePageTags } from "@/hooks/usePageTags";
 import { getAllTags } from "@/lib/tagService";
+import { useParams } from "next/navigation";
 
-export default function DetailPage({ params }: { params: Promise<{ campaignId: string, pageId: string }> }) {
-  // Unwrapping the params Promise safely
-  const resolvedParams = use(params);
-  const { campaignId, pageId } = resolvedParams;
+// Centralized Renderer
+const CardRenderer = ({ card, onDelete, campaignId }: any) => {
+  switch (card.type) {
+    case 'timeline':
+      return (
+        <TimelineCard 
+          id={card.id} 
+          onDelete={onDelete} 
+          campaignId={campaignId}
+          initialData={{
+            title: card.title || "New Timeline",
+            description: card.data?.description || ""
+          }}
+        />
+      ); 
+    case 'character':
+      return <CharacterCard key={card.id} id={card.id} initialData={card.data} onDelete={onDelete} campaignId={campaignId} />;
+    default:
+      return <TextCard key={card.id} id={card.id} initialData={card.data} onDelete={onDelete} campaignId={campaignId} />;
+  }
+};
+
+export default function DetailPage() {
+  const params = useParams();
+  const campaignId = params.campaignId as string;
+  const pageId = params.pageId as string;
 
   const [pageLabel, setPageLabel] = useState("Loading...");
   const [cards, setCards] = useState<any[]>([]);
   const [pageAvailableTags, setPageAvailableTags] = useState<any[]>([]);
-
   const [isNewCardModalOpen, setIsNewCardModalOpen] = useState(false);
   const [isPageTagModalOpen, setIsPageTagModalOpen] = useState(false);
 
   const { tags: pageTags, handleAdd: addPageTag, handleRemove: removePageTag } = usePageTags(pageId);
 
   useEffect(() => {
-    if (!campaignId || !pageId) return;
+    if (!campaignId || !pageId || campaignId === "undefined" || pageId === "undefined") {
+      return;
+    }
 
     const fetchInitialData = async () => {
-
       const { data: pageData, error: pageError } = await supabase
         .from('pages')
         .select('label, section_id')
@@ -46,9 +70,6 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
         .select('campaign_id')
         .eq('id', pageData.section_id)
         .single();
-
-      console.log("URL Campaign ID:", campaignId);
-      console.log("Database Campaign ID:", sectionData?.campaign_id);
 
       if (sectionError || sectionData?.campaign_id !== campaignId) {
         setPageLabel("Access Denied: Page does not belong to this campaign");
@@ -74,10 +95,14 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
     setIsPageTagModalOpen(true);
   };
 
-  const createCard = async (type: 'text' | 'character') => {
+  const createCard = async (type: 'text' | 'character' | 'timeline') => {
     const isChar = type === 'character';
+    const isTimeline = type === 'timeline';
+    
     const initialData = isChar
       ? { name: "Unnamed Character", class: "", race: "", hp: "", ac: "", imageUrl: "", str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10 }
+      : isTimeline
+      ? { title: "New Timeline" }
       : { text: "New card...", title: "New Card", subtitle: "" };
 
     const { data } = await supabase
@@ -86,7 +111,7 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
         page_id: pageId,
         type: type,
         data: initialData,
-        title: isChar ? "Unnamed Character" : "New Card"
+        title: isChar ? "Unnamed Character" : isTimeline ? "New Timeline" : "New Card"
       }])
       .select()
       .single();
@@ -131,11 +156,12 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
           items={cards}
           setItems={handleCardsChange}
           renderItem={(card) => (
-            card.type === 'character' ? (
-              <CharacterCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} campaignId={campaignId} />
-            ) : (
-              <TextCard key={card.id} id={card.id} initialData={card.data} onDelete={handleDelete} campaignId={campaignId} />
-            )
+            <CardRenderer 
+              key={card.id} 
+              card={card} 
+              onDelete={handleDelete} 
+              campaignId={campaignId} 
+            />
           )}
         />
         <button className={styles.addButton} onClick={() => setIsNewCardModalOpen(true)}>+ Add New Card</button>
@@ -159,6 +185,7 @@ export default function DetailPage({ params }: { params: Promise<{ campaignId: s
             <h3>Add a New Card</h3>
             <button className={styles.modalButtonCard} onClick={() => createCard('text')}>Text Card</button>
             <button className={styles.modalButtonCard} onClick={() => createCard('character')}>Character Card</button>
+            <button className={styles.modalButtonCard} onClick={() => createCard('timeline')}>Timeline Card</button>
             <button className={styles.modalButtonCancel} onClick={() => setIsNewCardModalOpen(false)}>Cancel</button>
           </div>
         </div>

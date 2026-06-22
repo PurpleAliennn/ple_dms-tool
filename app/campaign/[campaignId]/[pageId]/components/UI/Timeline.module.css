@@ -1,0 +1,212 @@
+.timelineContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 30px 0;
+    position: relative;
+    background: linear-gradient(to bottom, #283718 0%, #283718 100%);
+    background-position: 50% 0;
+    background-size: 2px 100%;
+    background-repeat: no-repeat;
+}
+
+.timelineRow {
+    display: flex;
+    width: 100%;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+.itemSide {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.centerDot {
+    width: 12px;
+    height: 12px;
+    background: #FEFADF;
+    border: 2px solid #283718;
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+.card {
+    width: 80%;
+    background: #FEFADF;
+    padding: 15px;
+    border-radius: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40px; 
+    height: 2px;
+    background: #283718;
+    z-index: -1;
+}
+
+.itemSide:first-child .card::after {
+    right: -40px;
+}
+
+.itemSide:last-child .card::after {
+    left: -40px;
+}
+
+.timelineCard {
+    background-color: #9DAD5C;
+    border-radius: 10px;
+    padding: 20px;
+    color: #283718;
+}
+
+.editRow{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background-color: #FEFADF;
+    border-radius: 10px;
+    width: 80%;
+}
+
+.editCardRow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+}
+
+.dateInput {
+    background: #AAC8D3;
+    border-radius: 10px;
+    padding: 10px;
+    color: #283718;
+    border: none;
+    width: 30%;
+}
+
+.titleInput {
+    background: #AAC8D3;
+    border-radius: 10px;
+    padding: 10px;
+    color: #283718;
+    border: none;
+}
+
+.descInput {
+    background: #AAC8D3;
+    border-radius: 10px;
+    padding: 10px;
+    color: #283718;
+    border: none;
+}
+
+.cardTitleInput {
+    background-color: #FEFADF;
+    border-radius: 10px;
+    padding: 10px;
+    width: 30%;
+    font-weight: bold;
+}
+
+.cardDescInput {
+    background-color: #FEFADF;
+    border-radius: 10px;
+    padding: 10px;
+    width: 50%;
+}
+
+.headerSection {
+    margin-bottom: 20px;
+}
+
+.headerSection h2 {
+    font-size: 23px;
+    font-weight: bold;
+    margin: 0 0 2px;
+}
+
+.headerSection p {
+    font-size: 18px;
+    font-style: italic;
+}
+
+.eventYear {
+    color: #70A9BC;
+    font-size: 15px;
+}
+
+.card h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 2px;
+}
+
+.card p {
+    font-size: 15px;
+    font-style: italic;
+}
+
+.eventActionButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.actionContainer {
+    display: flex;
+    gap: 8px;
+    margin-top: 30px;
+}
+
+.cancelBtn, .saveBtn, .deleteBtn, .addEventBtn, .editBtn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.cancelBtn:hover, .saveBtn:hover, .deleteBtn:hover, .addEventBtn:hover, .editBtn:hover {
+    filter: brightness(1.1);
+}
+
+.cancelEventBtn, .saveEventBtn, .deleteEventBtn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.cancelEventBtn:hover, .saveEventBtn:hover, .deleteEventBtn:hover {
+    filter: brightness(1.1);
+}
+
+.editEventBtn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.editEventBtn:hover {
+    filter: brightness(1.1);
+}
+
+.cancelBtn, .cancelEventBtn { background: #BE6B25; color: #FEFADF; }
+.saveBtn, .saveEventBtn { background: #616B39; color: #FEFADF; }
+.deleteBtn, .deleteEventBtn { background: #EC2C2C; color: #FEFADF; }
+.addEventBtn { background: #FEFADF; color: #283718; }
+.editBtn { background: #FEFADF; color: #283718; }
+.editEventBtn { background: #70A9BC; color: #283718; }

@@ -65,6 +65,7 @@ export default function TextCard({
 
     return (
         <div id={`card-${id}`} className={styles.textCard}>
+            
             <div className={styles.tagSection}>
                 <TagDisplay
                     tags={tags.map(t => ({
