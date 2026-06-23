@@ -108,3 +108,14 @@
   border-radius: 10px;
   background-color: #FEFADF;
 }
+
+.inlineLink {
+    color: #3498db; /* A nice link blue */
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.inlineLink:hover {
+    color: #2980b9;
+}

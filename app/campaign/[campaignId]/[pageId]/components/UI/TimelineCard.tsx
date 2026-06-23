@@ -10,7 +10,20 @@ import styles from "./Timeline.module.css";
 
 interface Tag { id: string; name: string; }
 
-export default function TimelineCard({ id, onDelete, campaignId, initialData }: { id: string, onDelete: (id: string) => void, campaignId: string, initialData: { title: string, description: string } }) {
+export default function TimelineCard({ 
+    id, 
+    onDelete, 
+    campaignId, 
+    pageId, // Add this here
+    initialData 
+}: { 
+    id: string, 
+    onDelete: (id: string) => void, 
+    campaignId: string, 
+    pageId: string, // Add this here
+    initialData: { title: string, description: string } 
+}) {
+    
     const [events, setEvents] = useState<any[]>([]);
     const [isEditingCard, setIsEditingCard] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,7 +59,17 @@ export default function TimelineCard({ id, onDelete, campaignId, initialData }: 
     }, [isModalOpen, campaignId]);
 
     const handleSaveCard = async () => {
-        await supabase.from('page_cards').update({ title, data: { description } }).eq('id', id);
+        await supabase
+            .from('page_cards')
+            .update({
+                title: title, // Update the root title
+                data: {
+                    ...initialData, // Keep existing data (like other fields)
+                    description: description // Update description
+                }
+            })
+            .eq('id', id);
+
         setTempData({ title, description });
         setIsEditingCard(false);
     };

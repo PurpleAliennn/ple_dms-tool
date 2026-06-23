@@ -1,78 +1,151 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./TextCard.module.css";
 import { useCharacterTags } from "@/hooks/useCharacterTags";
 import TagDisplay from "./TagDisplay";
 import TagModal from "./TagModal";
-import { getAllTags } from "@/lib/tagService";
+import LinkModal from "./LinkModal";
+import { getOrRegisterEntity } from "@/lib/entityService";
+import { createCampaignLink } from "@/lib/linkService";
+import React from 'react';
 
-interface Tag {
+
+interface TextCardProps {
     id: string;
-    name: string;
-    campaign_id?: string;
+    initialData: any;
+    onDelete: (id: string) => void;
+    campaignId: string;
+    pageId: string;
+    onNavigate: (id: string, type: 'card' | 'page') => void; 
 }
 
-export default function TextCard({
-    id,
-    initialData,
-    onDelete,
-    campaignId
-}: {
-    id: string,
-    initialData: { text: string, title?: string, subtitle?: string },
-    onDelete: (id: string) => void,
-    campaignId: string
-}) {
+export default function TextCard({ 
+    id, 
+    initialData, 
+    onDelete, 
+    campaignId, 
+    pageId,
+    onNavigate // <--- ADD THIS
+}: TextCardProps) {
+
+    console.log("TextCard Rendered for ID:", id);
+
+    const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(initialData.title || "");
     const [subtitle, setSubtitle] = useState(initialData.subtitle || "");
     const [text, setText] = useState(initialData.text || "");
-
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [allAvailableTags, setAllAvailableTags] = useState<Tag[]>([]);
+    const [inlineLinks, setInlineLinks] = useState<any[]>([]);
+    
+    const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+    const [selection, setSelection] = useState<{start: number, length: number} | null>(null);
 
     const { tags, handleAdd, handleRemove } = useCharacterTags(id);
 
-    const resizeTextarea = () => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    useEffect(() => {
+        if (!isEditing) {
+            const loadData = async () => {
+                const entityId = await getOrRegisterEntity('card', id);
+            const { data } = await supabase
+                .from('campaign_links')
+                .select(`
+                    *, 
+                    target_entity:entities!target_entity_id(
+                        reference_id, 
+                        entity_type
+                    )
+                `)
+                .eq('source_entity_id', entityId)
+                .eq('link_type', 'inline');
+                setInlineLinks(data || []);
+            };
+            loadData();
+        }
+    }, [isEditing, id]);
+
+    const handleSave = async () => {
+        await supabase.from('page_cards').update({ title, data: { text, title, subtitle } }).eq('id', id);
+        setIsEditing(false);
+    };
+
+    const deleteLink = async (linkId: string) => {
+        try {
+            const { error } = await supabase
+                .from('campaign_links')
+                .delete()
+                .eq('id', linkId);
+            
+            if (error) throw error;
+            
+            // Update local state to remove the link from the UI
+            setInlineLinks(inlineLinks.filter(l => l.id !== linkId));
+        } catch (err) {
+            console.error("Error deleting link:", err);
+            alert("Failed to delete link.");
         }
     };
 
-    useEffect(() => {
-        if (isModalOpen) {
-            getAllTags(campaignId).then((tags) => setAllAvailableTags(tags as Tag[]));
-        }
-    }, [isModalOpen, campaignId]);
+    const handleLinkClick = (e: React.MouseEvent, targetRefId: string, entityType: 'card' | 'page') => {
+        e.stopPropagation();
+        console.log("Navigating to:", targetRefId, "Type:", entityType);
+        
+        // This MUST match the signature: (id: string, type: 'card' | 'page') => void
+        onNavigate(targetRefId, entityType);
+    };
 
-    useEffect(() => {
-        if (isEditing) resizeTextarea();
-    }, [isEditing]);
-
-    const handleSave = async () => {
-        await supabase
-            .from('page_cards')
-            .update({
-                title: title,
-                data: { text, title, subtitle }
-            })
-            .eq('id', id);
-        setIsEditing(false);
+    const renderText = () => {
+        if (inlineLinks.length === 0) return <p>{text}</p>;
+        const sorted = [...inlineLinks].sort((a, b) => a.fragment_start - b.fragment_start);
+        
+        const parts: React.ReactNode[] = [];
+        let lastIdx = 0;
+        
+        sorted.forEach((link, i) => {
+            if (!link.target_entity) return;
+            parts.push(<span key={`text-${i}`}>{text.slice(lastIdx, link.fragment_start)}</span>);
+            parts.push(
+                <span 
+                    key={link.id} 
+                    className={styles.inlineLink} 
+                    onClick={(e) => {
+                        if (link.target_entity?.reference_id) {
+                            // DEBUG: See what the DB actually returned
+                            console.log("Raw link object from DB:", link);
+                            
+                            // USE THE FIELD DIRECTLY
+                            const rawType = link.target_entity.entity_type;
+                            const targetId = link.target_entity.reference_id;
+                            
+                            // Ensure we handle 'page' vs 'card' explicitly
+                            const finalType = (rawType === 'page') ? 'page' : 'card';
+                            
+                            console.log("Determined Navigation Type:", finalType);
+                            handleLinkClick(e, targetId, finalType);
+                        }
+                    }}
+                >
+                    {text.slice(link.fragment_start, link.fragment_start + link.fragment_length)}
+                </span>
+            );
+            lastIdx = link.fragment_start + link.fragment_length;
+        });
+        
+        parts.push(<span key="final">{text.slice(lastIdx)}</span>);
+        return <p>{parts}</p>;
     };
 
     return (
         <div id={`card-${id}`} className={styles.textCard}>
-            
             <div className={styles.tagSection}>
                 <TagDisplay
-                    tags={tags.map(t => ({
+                    tags={tags.map((t: any) => ({
                         id: t.tag_id,
                         label: t.tags?.name || t.tags?.label || "Unknown"
                     }))}
-                    onAdd={() => setIsModalOpen(true)}
+                    onAdd={() => setIsTagModalOpen(true)}
                     onRemove={(tagId) => handleRemove(tagId)}
                 />
             </div>
@@ -91,13 +164,42 @@ export default function TextCard({
                         onChange={(e) => setSubtitle(e.target.value)}
                         placeholder="Subtitle"
                     />
-                    <textarea
-                        ref={textareaRef}
-                        className={styles.textarea}
-                        value={text}
-                        onChange={(e) => { setText(e.target.value); resizeTextarea(); }}
-                        style={{ overflow: 'hidden' }}
+                    <textarea 
+                        className={styles.textarea} 
+                        value={text} 
+                        onChange={(e) => setText(e.target.value)}
+                        onMouseUp={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            setSelection({ start: target.selectionStart, length: target.selectionEnd - target.selectionStart });
+                        }}
                     />
+
+                    <div className={styles.linkManager}>
+                        <h4>Existing Links:</h4>
+                        {inlineLinks.length === 0 ? <p>No links yet.</p> : (
+                            <ul>
+                                {inlineLinks.map((link) => (
+                                    <li key={link.id}>
+                                        {text.slice(link.fragment_start, link.fragment_start + link.fragment_length)}
+                                        <button onClick={() => deleteLink(link.id)}>Delete</button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    <button 
+                        onMouseDown={async (e) => {
+                            e.preventDefault();
+                            if (selection && selection.length > 0) {
+                                setIsLinkModalOpen(true);
+                            } else {
+                                alert("Please highlight text first!");
+                            }
+                        }}
+                    >
+                        Add Link to Selection
+                    </button>
                     <div className={styles.cardActions}>
                         <button className={styles.cancelBtn} onClick={() => { setIsEditing(false); setTitle(initialData.title || ""); setSubtitle(initialData.subtitle || ""); setText(initialData.text); }}>Cancel</button>
                         <button className={styles.deleteBtn} onClick={() => onDelete(id)}>Delete</button>
@@ -108,26 +210,173 @@ export default function TextCard({
                 <div className={styles.viewMode}>
                     {title && <h3 className={styles.cardTitle}>{title}</h3>}
                     {subtitle && <h4 className={styles.cardSubtitle}>{subtitle}</h4>}
-                    <p>{text}</p>
-                    <div className={styles.cardActions}>
-                        <button className={styles.editBtn} onClick={() => setIsEditing(true)}>
-                            <span>✎</span> Edit
-                        </button>
-                    </div>
+                    {renderText()}
+                    <button className={styles.editBtn} onClick={() => setIsEditing(true)}>
+                        <span>✎</span> Edit
+                    </button>
                 </div>
             )}
 
-            <TagModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                allTags={allAvailableTags}
-                setAllTags={setAllAvailableTags}
-                campaignId={campaignId}
-                onAdd={async (name) => {
-                    await handleAdd(name);
-                    setIsModalOpen(false);
+            <LinkModal 
+                isOpen={isLinkModalOpen} 
+                onClose={() => setIsLinkModalOpen(false)} 
+                campaignId={campaignId} // Don't forget to pass this!
+                onLinkSelected={async (targetId: string, targetType: string) => {
+                    if (!selection || !targetId) return;
+
+                    try {
+                        if (targetType === 'PAGE') {
+                            // Handle Page Linking
+                            const sourceId = await getOrRegisterEntity('card', id);
+                            const targetEntityId = await getOrRegisterEntity('page', targetId);
+                            await createCampaignLink(sourceId, targetEntityId, 'inline', selection);
+                        } else {
+                            // Handle Card Linking (Existing logic)
+                            const sourceId = await getOrRegisterEntity('card', id);
+                            const targetEntityId = await getOrRegisterEntity('card', targetId);
+                            await createCampaignLink(sourceId, targetEntityId, 'inline', selection);
+                        }
+                        
+                        setIsLinkModalOpen(false);
+                        setIsEditing(false); // Refresh view
+                    } catch (err) {
+                        console.error("Link creation failed:", err);
+                        alert("Database error: Could not create link.");
+                    }
                 }}
             />
         </div>
     );
 }
+
+// "use client";
+// import { useState, useRef, useEffect } from "react";
+// import { supabase } from "@/lib/supabase";
+// import styles from "./TextCard.module.css";
+// import { useCharacterTags } from "@/hooks/useCharacterTags";
+// import TagDisplay from "./TagDisplay";
+// import TagModal from "./TagModal";
+// import { getAllTags } from "@/lib/tagService";
+
+// interface Tag {
+//     id: string;
+//     name: string;
+//     campaign_id?: string;
+// }
+
+// export default function TextCard({
+//     id,
+//     initialData,
+//     onDelete,
+//     campaignId
+// }: {
+//     id: string,
+//     initialData: { text: string, title?: string, subtitle?: string },
+//     onDelete: (id: string) => void,
+//     campaignId: string
+// }) {
+//     const [isEditing, setIsEditing] = useState(false);
+//     const [title, setTitle] = useState(initialData.title || "");
+//     const [subtitle, setSubtitle] = useState(initialData.subtitle || "");
+//     const [text, setText] = useState(initialData.text || "");
+
+//     const textareaRef = useRef<HTMLTextAreaElement>(null);
+//     const [isModalOpen, setIsModalOpen] = useState(false);
+//     const [allAvailableTags, setAllAvailableTags] = useState<Tag[]>([]);
+
+//     const { tags, handleAdd, handleRemove } = useCharacterTags(id);
+
+//     const resizeTextarea = () => {
+//         if (textareaRef.current) {
+//             textareaRef.current.style.height = 'auto';
+//             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+//         }
+//     };
+
+//     useEffect(() => {
+//         if (isModalOpen) {
+//             getAllTags(campaignId).then((tags) => setAllAvailableTags(tags as Tag[]));
+//         }
+//     }, [isModalOpen, campaignId]);
+
+//     useEffect(() => {
+//         if (isEditing) resizeTextarea();
+//     }, [isEditing]);
+
+//     const handleSave = async () => {
+//         await supabase
+//             .from('page_cards')
+//             .update({
+//                 title: title,
+//                 data: { text, title, subtitle }
+//             })
+//             .eq('id', id);
+//         setIsEditing(false);
+//     };
+
+//     return (
+//         <div id={`card-${id}`} className={styles.textCard}>
+            
+//             <div className={styles.tagSection}>
+//                 <TagDisplay
+//                     tags={tags.map(t => ({
+//                         id: t.tag_id,
+//                         label: t.tags?.name || t.tags?.label || "Unknown"
+//                     }))}
+//                     onAdd={() => setIsModalOpen(true)}
+//                     onRemove={(tagId) => handleRemove(tagId)}
+//                 />
+//             </div>
+
+//             {isEditing ? (
+//                 <div className={styles.editForm}>
+//                     <input
+//                         className={styles.titleInput}
+//                         value={title}
+//                         onChange={(e) => setTitle(e.target.value)}
+//                         placeholder="Title"
+//                     />
+//                     <input
+//                         className={styles.subtitleInput}
+//                         value={subtitle}
+//                         onChange={(e) => setSubtitle(e.target.value)}
+//                         placeholder="Subtitle"
+//                     />
+//                     <textarea
+//                         ref={textareaRef}
+//                         className={styles.textarea}
+//                         value={text}
+//                         onChange={(e) => { setText(e.target.value); resizeTextarea(); }}
+//                         style={{ overflow: 'hidden' }}
+//                     />
+//                     <div className={styles.cardActions}>
+//                         <button className={styles.cancelBtn} onClick={() => { setIsEditing(false); setTitle(initialData.title || ""); setSubtitle(initialData.subtitle || ""); setText(initialData.text); }}>Cancel</button>
+//                         <button className={styles.deleteBtn} onClick={() => onDelete(id)}>Delete</button>
+//                         <button className={styles.saveBtn} onClick={handleSave}>Save</button>
+//                     </div>
+//                 </div>
+//             ) : (
+//                 <div className={styles.viewMode}>
+//                     {title && <h3 className={styles.cardTitle}>{title}</h3>}
+//                     {subtitle && <h4 className={styles.cardSubtitle}>{subtitle}</h4>}
+//                     <p>{text}</p>
+//                     <div className={styles.cardActions}>
+
+//                     </div>
+//                 </div>
+//             )}
+
+//             <TagModal
+//                 isOpen={isModalOpen}
+//                 onClose={() => setIsModalOpen(false)}
+//                 allTags={allAvailableTags}
+//                 setAllTags={setAllAvailableTags}
+//                 campaignId={campaignId}
+//                 onAdd={async (name) => {
+//                     await handleAdd(name);
+//                     setIsModalOpen(false);
+//                 }}
+//             />
+//         </div>
+//     );
+// }

@@ -11,27 +11,44 @@ import TagModal from "./components/UI/TagModal";
 import TagDisplay from "./components/UI/TagDisplay";
 import { usePageTags } from "@/hooks/usePageTags";
 import { getAllTags } from "@/lib/tagService";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
-// Centralized Renderer
-const CardRenderer = ({ card, onDelete, campaignId }: any) => {
+
+interface CardProps {
+  card: any;
+  onDelete: (id: string) => void;
+  campaignId: string;
+  pageId: string;
+  onNavigate: (id: string, type: 'card' | 'page') => void;
+}
+
+// Update the renderer to use the interface
+const CardRenderer = ({ card, onDelete, campaignId, pageId, onNavigate }: CardProps) => {
+  const commonProps = {
+    id: card.id,
+    initialData: card.data,
+    onDelete,
+    campaignId,
+    pageId,
+    // Change this to pass through both id and type
+    onNavigate: (id: string, type: 'card' | 'page') => onNavigate(id, type),
+  };
+
   switch (card.type) {
     case 'timeline':
       return (
-        <TimelineCard 
-          id={card.id} 
-          onDelete={onDelete} 
-          campaignId={campaignId}
+        <TimelineCard
+          {...commonProps}
           initialData={{
             title: card.title || "New Timeline",
             description: card.data?.description || ""
           }}
         />
-      ); 
+      );
     case 'character':
-      return <CharacterCard key={card.id} id={card.id} initialData={card.data} onDelete={onDelete} campaignId={campaignId} />;
+      return <CharacterCard {...commonProps} />;
     default:
-      return <TextCard key={card.id} id={card.id} initialData={card.data} onDelete={onDelete} campaignId={campaignId} />;
+      return <TextCard {...commonProps} />;
   }
 };
 
@@ -39,6 +56,9 @@ export default function DetailPage() {
   const params = useParams();
   const campaignId = params.campaignId as string;
   const pageId = params.pageId as string;
+  const router = useRouter();
+
+  console.log("DetailPage loaded with pageId:", pageId);
 
   const [pageLabel, setPageLabel] = useState("Loading...");
   const [cards, setCards] = useState<any[]>([]);
@@ -47,6 +67,44 @@ export default function DetailPage() {
   const [isPageTagModalOpen, setIsPageTagModalOpen] = useState(false);
 
   const { tags: pageTags, handleAdd: addPageTag, handleRemove: removePageTag } = usePageTags(pageId);
+
+  // Inside DetailPage.tsx
+const handleNavigate = async (targetId: string, entityType: 'card' | 'page') => {
+    console.log("DetailPage received navigate:", { targetId, entityType });
+
+    if (entityType === 'page') {
+        router.push(`/campaign/${campaignId}/${targetId}`);
+        return;
+    }
+
+    const elementId = `card-${targetId}`;
+    const element = document.getElementById(elementId);
+
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        // USE .maybeSingle() to stop the crash!
+        const { data: cardData, error } = await supabase
+            .from('page_cards')
+            .select('page_id')
+            .eq('id', targetId)
+            .maybeSingle(); 
+
+        if (error) {
+            console.error("Supabase Error:", error);
+            return;
+        }
+
+        if (!cardData) {
+            console.error("Card lookup failed, ID likely a page:", targetId);
+            // If we are here, it means we tried to find a card but couldn't.
+            // DO NOT continue to push, as the URL will be invalid.
+            return;
+        }
+
+        router.push(`/campaign/${campaignId}/${cardData.page_id}#${elementId}`);
+    }
+};
 
   useEffect(() => {
     if (!campaignId || !pageId || campaignId === "undefined" || pageId === "undefined") {
@@ -98,14 +156,15 @@ export default function DetailPage() {
   const createCard = async (type: 'text' | 'character' | 'timeline') => {
     const isChar = type === 'character';
     const isTimeline = type === 'timeline';
-    
+
     const initialData = isChar
       ? { name: "Unnamed Character", class: "", race: "", hp: "", ac: "", imageUrl: "", str: 10, dex: 10, con: 10, wis: 10, int: 10, cha: 10 }
       : isTimeline
-      ? { title: "New Timeline" }
-      : { text: "New card...", title: "New Card", subtitle: "" };
+        ? { title: "New Timeline" }
+        : { text: "New card...", title: "New Card", subtitle: "" };
 
-    const { data } = await supabase
+    // 1. Create the card
+    const { data: newCard, error: cardError } = await supabase
       .from('page_cards')
       .insert([{
         page_id: pageId,
@@ -116,7 +175,28 @@ export default function DetailPage() {
       .select()
       .single();
 
-    if (data) setCards([...cards, data]);
+    if (cardError) {
+      console.error("Error creating card:", cardError);
+      return;
+    }
+
+    // 2. IMPORTANT: Index the card in the entities table
+    if (newCard) {
+      const { error: entityError } = await supabase
+        .from('entities')
+        .insert([{
+          entity_type: 'card',
+          reference_id: newCard.id
+        }]);
+
+      if (entityError) {
+        console.error("Error creating entity link:", entityError);
+      }
+
+      // 3. Update state
+      setCards([...cards, newCard]);
+    }
+
     setIsNewCardModalOpen(false);
   };
 
@@ -137,6 +217,8 @@ export default function DetailPage() {
     setCards(cards.filter((card) => card.id !== id));
   };
 
+
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -156,11 +238,13 @@ export default function DetailPage() {
           items={cards}
           setItems={handleCardsChange}
           renderItem={(card) => (
-            <CardRenderer 
-              key={card.id} 
-              card={card} 
-              onDelete={handleDelete} 
-              campaignId={campaignId} 
+            <CardRenderer
+              key={card.id}
+              card={card}
+              onDelete={handleDelete}
+              campaignId={campaignId}
+              pageId={pageId}
+              onNavigate={handleNavigate}
             />
           )}
         />
@@ -191,5 +275,6 @@ export default function DetailPage() {
         </div>
       )}
     </div>
+
   );
 }

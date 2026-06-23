@@ -1,0 +1,27 @@
+.resultsList { margin-top: 10px; }
+
+.resultItem {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #fdf6e3;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.itemBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    margin-right: 12px;
+    min-width: 70px;
+    text-align: center;
+}
+
+.page { background-color: #6398a6; }
+.text { background-color: #d69e5d; }
+.timeline { background-color: #98b668; }
+.character { background-color: #b66868; }
