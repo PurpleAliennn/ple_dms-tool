@@ -54,10 +54,11 @@ export default function DashboardPage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1>My Campaigns</h1>
+                <h1>Lorechives</h1>
             </header>
 
             <div className={styles.campaignGrid}>
+                <h1> My campaigns </h1>
                 <div className={styles.campaigns}>
                     {campaigns.map((camp) => (
                         <div key={camp.id} className={styles.campaignCardWrapper} style={{ position: 'relative' }}>

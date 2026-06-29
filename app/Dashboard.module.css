@@ -45,6 +45,12 @@ body {
     gap: 10px;
 }
 
+.campaignGrid h1 {
+    font-size: 25px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
 .addButton {
     background-color: #70A9BC;
     border: none;

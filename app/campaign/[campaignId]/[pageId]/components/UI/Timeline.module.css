@@ -22,6 +22,7 @@
     display: flex;
     justify-content: center;
     position: relative;
+    overflow: visible; /* Ensure the pseudo-element connection lines aren't clipped */
 }
 
 .centerDot {
@@ -37,7 +38,7 @@
 }
 
 .card {
-    width: 80%;
+    width: 300px;
     background: #FEFADF;
     padding: 15px;
     border-radius: 10px;
@@ -45,7 +46,7 @@
     z-index: 2;
 }
 
-.card::after {
+/* .card::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -53,7 +54,19 @@
     height: 2px;
     background: #283718;
     z-index: -1;
+} */
+
+.cardConnector {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 2px;
+    background: #283718;
+    z-index: -1;
 }
+
+.itemSide:first-child .cardConnector { right: -40px; }
+.itemSide:last-child .cardConnector { left: -40px; }
 
 .itemSide:first-child .card::after {
     right: -40px;
@@ -151,6 +164,10 @@
     font-size: 18px;
     font-weight: bold;
     margin: 0 0 2px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap; /* This allows the button to wrap if the title is too long */
+    gap: 8px;
 }
 
 .card p {
@@ -203,6 +220,27 @@
 .editEventBtn:hover {
     filter: brightness(1.1);
 }
+
+.textButton {
+    border: none;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    color: white; /* Make sure text stands out */
+    white-space: nowrap;
+}
+
+.linkContainer {
+    margin-bottom: 8px;
+}
+
+/* Colors matching your existing theme */
+.pageLink { background-color: #70A9BC; }
+.characterLink { background-color: #9DAD5C; }
+.timelineLink { background-color: #9DAD5C; }
+.textLink { background-color: #DCA15D; }
 
 .cancelBtn, .cancelEventBtn { background: #BE6B25; color: #FEFADF; }
 .saveBtn, .saveEventBtn { background: #616B39; color: #FEFADF; }

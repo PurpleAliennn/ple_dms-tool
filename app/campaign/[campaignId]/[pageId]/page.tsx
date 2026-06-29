@@ -5,13 +5,16 @@ import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 import TextCard from "./components/UI/TextCard";
 import CharacterCard from "./components/UI/CharacterCard";
-import TimelineCard from "./components/UI/TimelineCard"; // Ensure this path is correct
+import TimelineCard from "./components/UI/TimelineCard";
 import { SortableContainer } from "./components/dnd/SortableContainer";
 import TagModal from "./components/UI/TagModal";
 import TagDisplay from "./components/UI/TagDisplay";
 import { usePageTags } from "@/hooks/usePageTags";
 import { getAllTags } from "@/lib/tagService";
 import { useParams, useRouter } from "next/navigation";
+import { getOrRegisterEntity } from "@/lib/entityService";
+import { createCampaignLink } from "@/lib/linkService";
+import LinkModal from "./components/UI/LinkModal";
 
 
 interface CardProps {
@@ -20,17 +23,17 @@ interface CardProps {
   campaignId: string;
   pageId: string;
   onNavigate: (id: string, type: 'card' | 'page') => void;
+  onInitiateLink: (cardId: string, eventId: string) => void;
 }
 
 // Update the renderer to use the interface
-const CardRenderer = ({ card, onDelete, campaignId, pageId, onNavigate }: CardProps) => {
+const CardRenderer = ({ card, onDelete, campaignId, pageId, onNavigate, onInitiateLink }: CardProps) => {
   const commonProps = {
     id: card.id,
     initialData: card.data,
     onDelete,
     campaignId,
     pageId,
-    // Change this to pass through both id and type
     onNavigate: (id: string, type: 'card' | 'page') => onNavigate(id, type),
   };
 
@@ -39,6 +42,7 @@ const CardRenderer = ({ card, onDelete, campaignId, pageId, onNavigate }: CardPr
       return (
         <TimelineCard
           {...commonProps}
+          onInitiateLink={onInitiateLink} // PASS IT HERE
           initialData={{
             title: card.title || "New Timeline",
             description: card.data?.description || ""
@@ -66,45 +70,54 @@ export default function DetailPage() {
   const [isNewCardModalOpen, setIsNewCardModalOpen] = useState(false);
   const [isPageTagModalOpen, setIsPageTagModalOpen] = useState(false);
 
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkTargetEventId, setLinkTargetEventId] = useState<string | null>(null);
+  const [linkTargetCardId, setLinkTargetCardId] = useState<string | null>(null);
+
   const { tags: pageTags, handleAdd: addPageTag, handleRemove: removePageTag } = usePageTags(pageId);
 
   // Inside DetailPage.tsx
-const handleNavigate = async (targetId: string, entityType: 'card' | 'page') => {
+  const handleNavigate = async (targetId: string, entityType: 'card' | 'page') => {
     console.log("DetailPage received navigate:", { targetId, entityType });
 
     if (entityType === 'page') {
-        router.push(`/campaign/${campaignId}/${targetId}`);
-        return;
+      router.push(`/campaign/${campaignId}/${targetId}`);
+      return;
     }
 
     const elementId = `card-${targetId}`;
     const element = document.getElementById(elementId);
 
     if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-        // USE .maybeSingle() to stop the crash!
-        const { data: cardData, error } = await supabase
-            .from('page_cards')
-            .select('page_id')
-            .eq('id', targetId)
-            .maybeSingle(); 
 
-        if (error) {
-            console.error("Supabase Error:", error);
-            return;
-        }
+      // --- PLACE THE GUARD CLAUSE HERE ---
+      if (!targetId || targetId === "undefined") {
+        console.error("Attempted to lookup card with invalid ID:", targetId);
+        return;
+      }
+      // -----------------------------------
 
-        if (!cardData) {
-            console.error("Card lookup failed, ID likely a page:", targetId);
-            // If we are here, it means we tried to find a card but couldn't.
-            // DO NOT continue to push, as the URL will be invalid.
-            return;
-        }
+      const { data: cardData, error } = await supabase
+        .from('page_cards')
+        .select('page_id')
+        .eq('id', targetId)
+        .maybeSingle();
 
-        router.push(`/campaign/${campaignId}/${cardData.page_id}#${elementId}`);
+      if (error) {
+        console.error("Supabase Error:", error);
+        return;
+      }
+
+      if (!cardData) {
+        console.error("Card lookup failed, ID likely a page:", targetId);
+        return;
+      }
+
+      router.push(`/campaign/${campaignId}/${cardData.page_id}#${elementId}`);
     }
-};
+  };
 
   useEffect(() => {
     if (!campaignId || !pageId || campaignId === "undefined" || pageId === "undefined") {
@@ -245,6 +258,12 @@ const handleNavigate = async (targetId: string, entityType: 'card' | 'page') => 
               campaignId={campaignId}
               pageId={pageId}
               onNavigate={handleNavigate}
+              // Pass the handler down
+              onInitiateLink={(cardId, eventId) => {
+                setLinkTargetCardId(cardId);
+                setLinkTargetEventId(eventId);
+                setIsLinkModalOpen(true);
+              }}
             />
           )}
         />
@@ -274,7 +293,42 @@ const handleNavigate = async (targetId: string, entityType: 'card' | 'page') => 
           </div>
         </div>
       )}
+
+      <LinkModal
+        isOpen={isLinkModalOpen}
+        onClose={() => setIsLinkModalOpen(false)}
+        campaignId={campaignId}
+        // Explicitly define both arguments
+        onLinkSelected={async (targetEntityId: string, targetType: string) => {
+          if (!linkTargetCardId || !linkTargetEventId) return;
+
+          // 1. Get/Register the source (already doing this)
+          const sourceId = await getOrRegisterEntity('card', linkTargetCardId);
+
+          // 2. NEW: Get/Register the target 
+          // You need to register the target entity based on its type!
+          const targetId = await getOrRegisterEntity(
+            targetType.toLowerCase() === 'page' ? 'page' : 'card',
+            targetEntityId
+          );
+
+          // 3. Create the link using the registered entity ID
+          await createCampaignLink(
+            sourceId,
+            targetId, // Use the ID returned from the entities table
+            targetType.toLowerCase(),
+            undefined,
+            linkTargetEventId
+          );
+
+          setIsLinkModalOpen(false);
+          window.location.reload();
+        }}
+      />
     </div>
+
+
+
 
   );
 }
