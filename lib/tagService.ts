@@ -28,7 +28,7 @@ export const addCardTag = async (cardId: string, tagName: string) => {
 
   const { data: existing } = await supabase
     .from('card_tags')
-    .select('id')
+    .select('card_id')
     .eq('card_id', cardId)
     .eq('tag_id', tag.id);
 
@@ -53,7 +53,7 @@ export const getTagsForCard = async (cardId: string) => {
     .from('card_tags')
     .select(`
       tag_id,
-      tags (
+      tags!card_tags_tag_id_fkey (
         id,
         name
       )
@@ -65,7 +65,6 @@ export const getTagsForCard = async (cardId: string) => {
     return [];
   }
 
-  console.log("Raw data from Supabase:", data);
   return data || [];
 };
 

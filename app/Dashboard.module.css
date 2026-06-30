@@ -1,22 +1,22 @@
 body {
     padding: 0;
     margin: 0;
-    background-color: #fefae0 ;
+    background-color: #fefae0;
 }
 
 .header {
-  height: 110px;
-  flex-shrink: 0;
-  background-color: #283718;
-  color: #fefae0;
-  padding: 30px 15px 30px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    height: 110px;
+    flex-shrink: 0;
+    background-color: #283718;
+    color: #fefae0;
+    padding: 30px 15px 30px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .header h1 {
-  font-size: 2.5rem;
+    font-size: 2.5rem;
 }
 
 .campaignGrid {
@@ -31,12 +31,12 @@ body {
 
 .campaignCard {
     text-decoration: none;
-    color:#283718;
+    color: #283718;
     font-size: 20px;
 }
 
 .campaignCard:hover {
-    color:#fefae0;
+    color: #fefae0;
 }
 
 .campaigns {
@@ -62,46 +62,49 @@ body {
 }
 
 .modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* Ensures it is on top of everything */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent black */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    /* Ensures it is on top of everything */
 }
 
 .modalContent {
-  background: #9DAD5C;
-  padding: 2rem;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  color: black; /* Ensure text is readable */
+    background: #9DAD5C;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: black;
+    /* Ensure text is readable */
 }
 
 .modalContent h3 {
-  font-size: 20px;
-  color:#283718;
+    font-size: 20px;
+    color: #283718;
 }
 
 .modalInput {
-  display: block;
-  width: 100%;
-  margin: 1rem 0;
-  padding: 10px;
-  background-color: #fefae0;
-  border-radius: 10px;
+    display: block;
+    width: 100%;
+    margin: 1rem 0;
+    padding: 10px;
+    background-color: #fefae0;
+    border-radius: 10px;
 }
 
 .campaignCardWrapper {
     background-color: #9DAD5C;
     border-radius: 10px;
-    padding:20px;
+    padding: 20px;
     display: flex;
     gap: 20px;
     justify-content: center;
@@ -109,11 +112,11 @@ body {
 }
 
 .deleteBtn {
-  font-size: 30px;
+    font-size: 30px;
 }
 
 .deleteBtn:hover {
-  color: #EC2C2C;
+    color: #EC2C2C;
 }
 
 .cancelBtn {
@@ -159,4 +162,52 @@ body {
 
 .deleteModalBtn:hover {
     filter: brightness(1.1);
+}
+
+/* Dashboard.module.css */
+.dropdownMenu {
+    position: absolute;
+    right: 0;
+    margin-top: 10px;
+    width: 12rem;
+    /* 48 */
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    /* Gray-200 */
+    border-radius: 10px;
+    /* rounded-lg */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    /* shadow-xl */
+    z-index: 50;
+    color: black;
+    margin-right: 20px;
+}
+
+.dropdownItem {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 5px 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.dropdownItem:hover {
+    background-color: #f3f4f6;
+    padding: 5px 10px;
+    /* hover:bg-gray-100 */
+}
+
+.deleteItem {
+    color: #dc2626;
+    /* text-red-600 */
+}
+
+.userIcon {
+    background-color: #FEFADF;
+    border-radius: 10px;
+    padding: 10px 15px;
+    color: #283718;
+    margin-right: 20px;
 }

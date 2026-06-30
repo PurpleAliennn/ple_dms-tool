@@ -5,25 +5,28 @@ export type EntityType = 'page' | 'card' | 'event';
  * Gets the entity ID for a reference, or creates it if it doesn't exist.
  */
 export async function getOrRegisterEntity(type: 'card' | 'page', refId: string) {
-    // 1. Check if it exists
+    // 1. Try to find it
     const { data: existing } = await supabase
         .from('entities')
         .select('id')
         .eq('reference_id', refId)
-        .eq('entity_type', type) // Ensure we match the type!
-        .single();
+        .eq('entity_type', type)
+        .maybeSingle(); // Use maybeSingle() to avoid errors if null
     
     if (existing) return existing.id;
 
-    // 2. Create if missing
-    const { data: newEntity, error } = await supabase
+    // 2. Create it
+    const { data, error } = await supabase
         .from('entities')
         .insert([{ entity_type: type, reference_id: refId }])
-        .select()
+        .select('id') // Only select the ID to minimize overhead
         .single();
         
-    if (error) throw error;
-    return newEntity.id;
+    if (error) {
+        console.error("Entity creation failed:", error);
+        throw error;
+    }
+    return data.id;
 }
 
 /**

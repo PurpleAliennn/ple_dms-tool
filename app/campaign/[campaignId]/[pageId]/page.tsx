@@ -92,12 +92,10 @@ export default function DetailPage() {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
 
-      // --- PLACE THE GUARD CLAUSE HERE ---
       if (!targetId || targetId === "undefined") {
         console.error("Attempted to lookup card with invalid ID:", targetId);
         return;
       }
-      // -----------------------------------
 
       const { data: cardData, error } = await supabase
         .from('page_cards')

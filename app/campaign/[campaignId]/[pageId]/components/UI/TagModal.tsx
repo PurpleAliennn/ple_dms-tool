@@ -31,22 +31,43 @@ export default function TagModal({
     const [newTagName, setNewTagName] = useState("");
 
     const handleCreateTag = async () => {
+        console.log("Saving tag for Campaign ID:", campaignId);
         if (!newTagName.trim()) return;
 
+        // 1. Manually check for existing tag
+        const { data: existing, error: fetchError } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', newTagName.trim())
+            .eq('campaign_id', campaignId)
+            .maybeSingle();
+
+        if (fetchError) {
+            console.error("Fetch error:", fetchError);
+            return;
+        }
+
+        if (existing) {
+            alert("Tag already exists in this campaign.");
+            return;
+        }
+
+        // 2. Simple insert if it doesn't exist
         const { data, error } = await supabase
             .from('tags')
-            .upsert(
-                { name: newTagName, campaign_id: campaignId },
-                { onConflict: 'name' }
-            )
+            .insert([{
+                name: newTagName.trim(),
+                campaign_id: campaignId
+            }])
             .select()
             .single();
 
-        if (!error && data) {
-            setAllTags([...allTags.filter(t => t.name !== newTagName), data]);
+        if (error) {
+            console.error("Insert error:", error);
+            alert("Failed to save tag: " + error.message);
+        } else if (data) {
+            setAllTags([...allTags, data]);
             setNewTagName("");
-        } else {
-            console.error("Error saving tag:", error);
         }
     };
 

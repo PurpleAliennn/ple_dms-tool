@@ -32,11 +32,18 @@ export default function CampaignLayout({
     if (nameFromUrl) return;
 
     const fetchCampaignName = async () => {
+      // 1. Force a session refresh to be certain of the user's status
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // 2. Fetch with explicit logging to verify session
       const { data, error } = await supabase
         .from('campaigns')
         .select('name')
         .eq('id', campaignId)
-        .single();
+        .maybeSingle();
+
+      console.log("Session exists:", !!session);
+      console.log("Query Result:", data);
 
       if (data) setCampaignName(data.name);
       else setCampaignName("Untitled Campaign");
@@ -92,27 +99,27 @@ export default function CampaignLayout({
 
   const toggle = (section: string) => { setOpenSection(openSection === section ? null : section); };
 
-  const addSection = async (title: string) => {
-    if (!title) return;
+const addSection = async (title: string) => {
+  if (!title) return;
 
-    const { data, error } = await supabase
-      .from('sections')
-      .insert([{
-        label: title,
-        campaign_id: campaignId
-      }])
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from('sections')
+    .insert([{
+      label: title,
+      campaign_id: campaignId // Only pass the foreign key
+    }])
+    .select()
+    .single();
 
-    if (error) {
-      console.error("Error creating section:", error);
-      return;
-    }
+  if (error) {
+    console.error("Error creating section:", error);
+    return;
+  }
 
-    if (data) {
-      setSections([...sections, { id: data.id, title: data.label, subSections: [] }]);
-    }
-  };
+  if (data) {
+    setSections([...sections, { id: data.id, title: data.label, subSections: [] }]);
+  }
+};
 
   const addSubSection = async (sectionId: string, label: string) => {
     if (!label) return;

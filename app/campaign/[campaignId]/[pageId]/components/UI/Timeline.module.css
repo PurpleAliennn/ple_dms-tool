@@ -223,17 +223,29 @@
 
 .textButton {
     border: none;
-    padding: 2px 8px;
+    padding: 5px 10px;
     border-radius: 10px;
     font-size: 14px;
     cursor: pointer;
     margin-top: 10px;
-    color: white; /* Make sure text stands out */
+    color: #283718; /* Make sure text stands out */
     white-space: nowrap;
+    max-width: 80%;
+    display: flex;
+    justify-content: space-between;
 }
 
 .linkContainer {
     margin-bottom: 8px;
+}
+
+.removeBtn {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.removeBtn:hover {
+    color:#EC2C2C;
 }
 
 /* Colors matching your existing theme */
